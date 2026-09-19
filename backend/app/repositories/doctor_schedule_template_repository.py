@@ -110,3 +110,23 @@ class DoctorScheduleTemplateRepository:
         )
 
         return self.db.scalar(statement) is not None
+    
+    def get_active_schedule(
+        self,
+        doctor_id: uuid.UUID,
+        weekday: WeekdayEnum,
+        start_time: time,
+    ) -> DoctorScheduleTemplate | None:
+
+        statement = (
+            select(DoctorScheduleTemplate)
+            .where(
+                DoctorScheduleTemplate.doctor_id == doctor_id,
+                DoctorScheduleTemplate.weekday == weekday,
+                DoctorScheduleTemplate.is_active.is_(True),
+                DoctorScheduleTemplate.start_time <= start_time,
+                DoctorScheduleTemplate.end_time > start_time,
+            )
+        )
+
+        return self.db.scalar(statement)

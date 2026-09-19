@@ -17,6 +17,12 @@ from app.schemas.doctor_schedule_template import (
     DoctorScheduleTemplateUpdateRequest,
 )
 
+from app.core.enums import UserRoleEnum
+from app.core.exceptions import (
+    ConflictException,
+    NotFoundException,
+)
+from app.models.user import User
 
 class DoctorScheduleTemplateService:
     def __init__(self, db: Session):
@@ -133,3 +139,23 @@ class DoctorScheduleTemplateService:
             DoctorScheduleTemplateResponse.model_validate(template)
             for template in templates
         ]
+        
+    def get_my_schedule(
+        self,
+        current_user: User,
+    ) -> list[DoctorScheduleTemplateResponse]:
+        if current_user.role != UserRoleEnum.DOCTOR:
+            raise ConflictException(
+                "Only doctor can view their own schedule."
+            )
+
+        doctor = self.doctor_repository.get_by_user_id(
+            current_user.id,
+        )
+
+        if doctor is None:
+            raise NotFoundException(
+                "Doctor profile not found."
+            )
+
+        return self.list_by_doctor(doctor.id)

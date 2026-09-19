@@ -1,15 +1,21 @@
 import uuid
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.dependencies import get_current_user, require_roles
+from app.core.enums import SpecializationStatusEnum, UserRoleEnum
+from app.models.user import User
 from app.repositories.department_repository import DepartmentRepository
 from app.repositories.specialization_repository import SpecializationRepository
-from app.schemas.specialization import (SpecializationCreateRequest,
-                                        SpecializationResponse,
-                                        SpecializationUpdateRequest)
+from app.schemas.specialization import (
+    SpecializationCreateRequest,
+    SpecializationResponse,
+    SpecializationUpdateRequest,
+)
 from app.services.specialization_service import SpecializationService
+
 
 router = APIRouter(
     prefix="/specializations",
@@ -37,8 +43,11 @@ def get_specialization_service(
 def create_specialization(
     request: SpecializationCreateRequest,
     service: SpecializationService = Depends(get_specialization_service),
+    current_user: User = Depends(
+        require_roles(UserRoleEnum.HOSPITAL_STAFF),
+    ),
 ):
-    return service.create_specialization(request)
+    return service.create(request)
 
 
 @router.get(
@@ -46,9 +55,20 @@ def create_specialization(
     response_model=list[SpecializationResponse],
 )
 def list_specializations(
+    status_filter: SpecializationStatusEnum | None = Query(
+        default=None,
+        alias="status",
+    ),
+    search: str | None = Query(
+        default=None,
+    ),
     service: SpecializationService = Depends(get_specialization_service),
+    current_user: User = Depends(get_current_user),
 ):
-    return service.list_specializations()
+    return service.list(
+        status=status_filter,
+        search=search,
+    )
 
 
 @router.get(
@@ -58,8 +78,9 @@ def list_specializations(
 def get_specialization(
     specialization_id: uuid.UUID,
     service: SpecializationService = Depends(get_specialization_service),
+    current_user: User = Depends(get_current_user),
 ):
-    return service.get_specialization(specialization_id)
+    return service.get(specialization_id)
 
 
 @router.patch(
@@ -70,8 +91,11 @@ def update_specialization(
     specialization_id: uuid.UUID,
     request: SpecializationUpdateRequest,
     service: SpecializationService = Depends(get_specialization_service),
+    current_user: User = Depends(
+        require_roles(UserRoleEnum.HOSPITAL_STAFF),
+    ),
 ):
-    return service.update_specialization(
+    return service.update(
         specialization_id,
         request,
     )
@@ -84,5 +108,8 @@ def update_specialization(
 def delete_specialization(
     specialization_id: uuid.UUID,
     service: SpecializationService = Depends(get_specialization_service),
+    current_user: User = Depends(
+        require_roles(UserRoleEnum.HOSPITAL_STAFF),
+    ),
 ):
-    return service.delete_specialization(specialization_id)
+    return service.delete(specialization_id)

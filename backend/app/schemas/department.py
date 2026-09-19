@@ -19,7 +19,13 @@ class DepartmentBase(BaseModel):
         max_length=500,
         description="Department description",
     )
-    
+
+    image_url: str | None = Field(
+        default=None,
+        max_length=500,
+        description="Department image URL",
+    )
+
     slot_duration_minutes: int = Field(
         ge=5,
         le=120,
@@ -32,16 +38,17 @@ class DepartmentBase(BaseModel):
         value = normalize_name(value)
 
         if not value:
-            raise ValueError("Department name cannot be empty.")
+            raise ValueError(
+                "Department name cannot be empty."
+            )
 
         return value
 
 
 class DepartmentCreateRequest(DepartmentBase):
     model_config = ConfigDict(
-    extra="forbid"
-)
-    pass
+        extra="forbid",
+    )
 
 
 class DepartmentUpdateRequest(BaseModel):
@@ -55,7 +62,13 @@ class DepartmentUpdateRequest(BaseModel):
         default=None,
         max_length=500,
     )
-    
+
+    image_url: str | None = Field(
+        default=None,
+        max_length=500,
+        description="Department image URL",
+    )
+
     slot_duration_minutes: int | None = Field(
         default=None,
         ge=5,
@@ -66,31 +79,44 @@ class DepartmentUpdateRequest(BaseModel):
 
     @field_validator("name")
     @classmethod
-    def validate_name(cls, value: str | None) -> str | None:
+    def validate_name(
+        cls,
+        value: str | None,
+    ) -> str | None:
         if value is None:
             return value
 
         value = normalize_name(value)
 
         if not value:
-            raise ValueError("Department name cannot be empty.")
+            raise ValueError(
+                "Department name cannot be empty."
+            )
 
         return value
-    
+
     model_config = ConfigDict(
-    extra="forbid"
-)
+        extra="forbid",
+    )
 
 
 class DepartmentResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
     id: UUID
     name: str
     description: str | None
+    image_url: str | None
     slot_duration_minutes: int
     status: DepartmentStatusEnum
     created_at: datetime
     updated_at: datetime
-
-   
+    
+    
+class DepartmentDeactivateRequest(BaseModel):
+    password: str = Field(
+        min_length=1,
+        description="Staff password for department deactivation",
+    )

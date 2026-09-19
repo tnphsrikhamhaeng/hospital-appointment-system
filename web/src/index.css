@@ -1,0 +1,143 @@
+@import url("https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap");
+
+:root {
+  --primary: #0b5cab;
+  --primary-dark: #084a8c;
+  --primary-light: #eaf4ff;
+
+  --text: #26364a;
+  --text-secondary: #66758a;
+  --text-h: #16324f;
+
+  --bg: #f5f9fd;
+  --surface: #ffffff;
+  --border: #dce6f0;
+
+  --success: #16865b;
+  --success-bg: #eaf8f1;
+
+  --warning: #c98a16;
+  --warning-bg: #fff7e5;
+
+  --danger: #d64545;
+  --danger-bg: #fff0f0;
+
+  --shadow:
+    0 8px 24px rgba(25, 67, 105, 0.08);
+
+  --font: "Kanit", sans-serif;
+
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color: var(--text);
+  background: var(--bg);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-family: var(--font);
+  color: var(--text-h);
+  font-weight: 500;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+input,
+textarea,
+select {
+  color: var(--text);
+}
+
+@media (max-width: 1024px) {
+  :root {
+    font-size: 15px;
+  }
+}
+
+/* =========================
+   Page Transition
+========================= */
+
+.page-transition {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.page-transition-enter {
+  animation: page-fade-in 350ms ease-out both;
+}
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition-enter {
+    animation: none;
+  }
+}

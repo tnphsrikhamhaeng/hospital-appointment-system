@@ -9,6 +9,9 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.models.appointment import Appointment
+    from app.models.doctor import Doctor
+    from app.models.user_device import UserDevice
+    from app.models.medical_record import MedicalRecord
 
 from app.core.database import Base
 from app.core.enums import GenderEnum, UserRoleEnum, UserStatusEnum
@@ -56,14 +59,14 @@ class User(Base):
         nullable=False,
     )
 
-    gender: Mapped[GenderEnum] = mapped_column(
+    gender: Mapped[GenderEnum | None] = mapped_column(
         Enum(GenderEnum, name="gender_enum"),
-        nullable=False,
+        nullable=True,
     )
 
-    date_of_birth: Mapped[date] = mapped_column(
+    date_of_birth: Mapped[date | None] = mapped_column(
         Date,
-        nullable=False,
+        nullable=True,
     )
 
     role: Mapped[UserRoleEnum] = mapped_column(
@@ -91,7 +94,24 @@ class User(Base):
         nullable=False,
     )
     
+    doctor: Mapped["Doctor | None"] = relationship(
+        "Doctor",
+        back_populates="user",
+        uselist=False,
+    )
+    
     appointments: Mapped[list["Appointment"]] = relationship(
     "Appointment",
     back_populates="patient",
+    )
+    
+    devices: Mapped[list["UserDevice"]] = relationship(
+        "UserDevice",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    
+    medical_records: Mapped[list["MedicalRecord"]] = relationship(
+        "MedicalRecord",
+        back_populates="patient",
     )

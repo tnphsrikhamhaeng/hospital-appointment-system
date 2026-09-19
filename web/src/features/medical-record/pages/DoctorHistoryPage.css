@@ -1,0 +1,513 @@
+.doctor-history-page {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.doctor-history-content {
+  margin-left: 250px;
+  min-height: 100vh;
+  padding: 32px 36px 48px;
+}
+
+.doctor-history-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.doctor-history-header h1 {
+  margin: 2px 0 4px;
+  color: var(--text-h);
+  font-size: 30px;
+  font-weight: 500;
+}
+
+.doctor-history-header p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+.doctor-history-header .page-eyebrow {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--primary);
+  font-size: 13px;
+}
+
+.doctor-header-right {
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.today-date {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.today-date span {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.today-date strong {
+  color: var(--text-h);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.doctor-history-alert {
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  color: var(--danger);
+  background: var(--danger-bg);
+  border: 1px solid #f2caca;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+/* =========================
+   Common Card
+========================= */
+
+.history-filter-card,
+.history-table-card {
+  overflow: hidden;
+  margin-bottom: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.history-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 20px 18px;
+}
+
+.history-card-header h2 {
+  margin: 3px 0 2px;
+  color: var(--text-h);
+  font-size: 19px;
+  font-weight: 500;
+}
+
+.history-card-header p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.section-eyebrow {
+  display: block;
+  color: var(--primary);
+  font-size: 12px;
+}
+
+.history-count {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* =========================
+   Date Filter
+========================= */
+
+.history-filter-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 18px 20px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.history-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.history-filter-field label {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.history-filter-field input {
+  width: 165px;
+  height: 38px;
+  padding: 0 10px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  outline: none;
+}
+
+.history-filter-field input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(11, 92, 171, 0.1);
+}
+
+.history-search-button {
+  height: 38px;
+  padding: 0 18px;
+  color: #fff;
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.history-search-button:hover:not(:disabled) {
+  background: var(--primary-dark);
+}
+
+.history-search-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* =========================
+   Status Filter
+========================= */
+
+.history-status-section {
+  margin-bottom: 16px;
+}
+
+.history-status-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.history-status-title {
+  margin: 3px 0 0;
+  color: var(--text-h);
+  font-size: 19px;
+  font-weight: 500;
+}
+
+.history-status-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.history-filter-button {
+  min-width: 74px;
+  height: 36px;
+  padding: 0 14px;
+  color: var(--text-secondary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 13px;
+}
+
+.history-filter-button:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.history-filter-button.active {
+  color: var(--primary);
+  background: var(--primary-light);
+  border-color: var(--primary);
+}
+
+/* =========================
+   History Table
+========================= */
+
+.history-table-card {
+  margin-bottom: 0;
+}
+
+.history-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-top: 1px solid var(--border);
+}
+
+.history-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.history-table th {
+  height: 42px;
+  padding: 0 14px;
+  color: var(--text-secondary);
+  background: #f8fbfe;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.history-table td {
+  height: 62px;
+  padding: 0 14px;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.history-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.history-table tbody tr:hover {
+  background: var(--bg);
+}
+
+.history-date {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.history-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.history-time strong {
+  color: var(--text);
+  font-weight: 400;
+}
+
+.history-patient-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.history-patient-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  color: var(--primary);
+  background: var(--primary-light);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.history-patient-cell strong {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+/* =========================
+   Status Badge
+========================= */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-completed {
+  color: var(--success);
+  background: var(--success-bg);
+}
+
+.status-completed .status-dot {
+  background: var(--success);
+}
+
+.status-no-show {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.status-no-show .status-dot {
+  background: var(--danger);
+}
+
+/* =========================
+   Actions
+========================= */
+
+.history-detail-button {
+  height: 34px;
+  padding: 0 12px;
+  color: var(--primary);
+  background: var(--surface);
+  border: 1px solid #c9dceb;
+  border-radius: 7px;
+  font-size: 12px;
+}
+
+.history-detail-button:hover {
+  background: var(--primary-light);
+  border-color: var(--primary);
+}
+
+.history-no-show-label {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+/* =========================
+   Empty / Loading
+========================= */
+
+.history-empty-state {
+  display: flex;
+  min-height: 180px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.history-empty-state p {
+  margin: 6px 0 0;
+  font-size: 14px;
+}
+
+.history-empty-state h3 {
+  margin: 12px 0 0;
+  color: var(--text-h);
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.history-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  color: var(--primary);
+  background: var(--primary-light);
+  border-radius: 50%;
+  font-size: 18px;
+}
+
+/* =========================
+   Footer
+========================= */
+
+.history-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 0 20px;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.history-data-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.history-data-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 900px) {
+  .doctor-history-content {
+    padding: 28px 24px 40px;
+  }
+
+  .history-status-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 680px) {
+  .doctor-history-content {
+    margin-left: 0;
+    padding: 24px 16px 32px;
+  }
+
+  .doctor-history-header {
+    flex-direction: column;
+  }
+
+  .doctor-header-right {
+    align-self: flex-start;
+  }
+
+  .today-date {
+    align-items: flex-start;
+  }
+
+  .history-card-header {
+    flex-direction: column;
+  }
+
+  .history-filter-form {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .history-filter-field input {
+    width: 100%;
+  }
+
+  .history-search-button {
+    width: 100%;
+  }
+
+  .history-status-buttons {
+    width: 100%;
+  }
+
+  .history-filter-button {
+    flex: 1;
+  }
+
+  .history-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 16px;
+  }
+}

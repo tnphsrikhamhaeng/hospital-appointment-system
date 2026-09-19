@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
-from sqlalchemy.orm import (Session,
-    selectinload
-)
+from sqlalchemy import or_, select
+from sqlalchemy.orm import Session, selectinload
 
-from app.models.doctor import Doctor
 from app.core.enums import DoctorStatusEnum
+from app.models.doctor import Doctor
+from app.models.user import User
 
 
 class DoctorRepository:
@@ -52,7 +51,9 @@ class DoctorRepository:
         self,
         license_number: str,
     ) -> Doctor | None:
-        stmt = select(Doctor).where(Doctor.license_number == license_number)
+        stmt = select(Doctor).where(
+            Doctor.license_number == license_number,
+        )
         return self.db.scalar(stmt)
 
     def update(self, doctor: Doctor) -> Doctor:
@@ -66,10 +67,13 @@ class DoctorRepository:
 
     def get_doctors(
         self,
+        department_id: uuid.UUID | None = None,
         status: DoctorStatusEnum | None = None,
+        search: str | None = None,
     ) -> list[Doctor]:
         stmt = (
             select(Doctor)
+            .join(User, Doctor.user_id == User.id, isouter=True)
             .options(
                 selectinload(Doctor.department),
                 selectinload(Doctor.specializations),
@@ -77,7 +81,36 @@ class DoctorRepository:
             .order_by(Doctor.created_at.desc())
         )
 
-        if status is not None:
-            stmt = stmt.where(Doctor.status == status)
+        if department_id is not None:
+            stmt = stmt.where(
+                Doctor.department_id == department_id,
+            )
 
-        return list(self.db.scalars(stmt).all())
+        if status is not None:
+            stmt = stmt.where(
+                Doctor.status == status,
+            )
+
+        if search:
+            search_value = f"%{search.strip()}%"
+
+            stmt = stmt.where(
+                or_(
+                    User.username.ilike(search_value),
+                    Doctor.first_name.ilike(search_value),
+                    Doctor.last_name.ilike(search_value),
+                    Doctor.license_number.ilike(search_value),
+                    Doctor.email.ilike(search_value),
+                )
+            )
+
+        return list(self.db.scalars(stmt).unique().all())
+
+    def get_by_user_id(
+        self,
+        user_id: uuid.UUID,
+    ) -> Doctor | None:
+        stmt = select(Doctor).where(
+            Doctor.user_id == user_id,
+        )
+        return self.db.scalar(stmt)

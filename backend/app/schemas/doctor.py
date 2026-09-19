@@ -3,8 +3,14 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from pydantic import (BaseModel, ConfigDict, EmailStr, Field, HttpUrl,
-                      field_validator)
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    HttpUrl,
+    field_validator,
+)
 
 from app.core.enums import DoctorPrefaceEnum, DoctorStatusEnum
 from app.core.regex import LICENSE_NUMBER_PATTERN, NAME_PATTERN, PHONE_PATTERN
@@ -14,6 +20,16 @@ from app.schemas.specialization import SpecializationResponse
 
 
 class DoctorCreateRequest(BaseModel):
+    employee_id: str = Field(
+        min_length=1,
+        max_length=20,
+    )
+
+    password: str = Field(
+        min_length=8,
+        max_length=255,
+    )
+
     profile_image_url: HttpUrl | None = None
 
     preface: DoctorPrefaceEnum
@@ -51,10 +67,10 @@ class DoctorCreateRequest(BaseModel):
     @classmethod
     def normalize_names(cls, value: str) -> str:
         return normalize_name(value)
-    
+
     model_config = ConfigDict(
-    extra="forbid"
-)
+        extra="forbid",
+    )
 
 
 class DoctorUpdateRequest(BaseModel):
@@ -93,10 +109,21 @@ class DoctorUpdateRequest(BaseModel):
         if value is None:
             return None
         return normalize_name(value)
-    
+
     model_config = ConfigDict(
-    extra="forbid"
-)
+        extra="forbid",
+    )
+
+
+class DoctorDeactivateRequest(BaseModel):
+    password: str = Field(
+        min_length=1,
+        max_length=255,
+    )
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
 
 class DoctorResponse(BaseModel):

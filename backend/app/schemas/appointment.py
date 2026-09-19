@@ -46,6 +46,11 @@ class AppointmentRescheduleRequest(BaseModel):
 
 class AppointmentStatusUpdateRequest(BaseModel):
     status: AppointmentStatusEnum
+    room_number: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=20,
+    )
 
 
 class AppointmentResponse(BaseModel):
@@ -69,6 +74,21 @@ class AppointmentResponse(BaseModel):
 
     created_at: datetime
     updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DoctorScheduleResponse(BaseModel):
+    id: uuid.UUID
+
+    patient_id: uuid.UUID
+    patient_name: str
+
+    appointment_date: date
+    start_time: time
+    end_time: time
+
+    status: AppointmentStatusEnum
 
     model_config = ConfigDict(from_attributes=True)
 

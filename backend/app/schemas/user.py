@@ -35,9 +35,9 @@ class UpdateProfileRequest(BaseModel):
         default=None,
         pattern=PHONE_PATTERN,
     )
-    
-    email : EmailStr | None = Field(
-        default=None
+
+    email: EmailStr | None = Field(
+        default=None,
     )
 
     model_config = ConfigDict(extra="forbid")
@@ -50,9 +50,8 @@ class ProfileResponse(BaseModel):
     first_name: str
     last_name: str
     phone_number: str
-    email : EmailStr
-    gender: GenderEnum
-    date_of_birth: date
+    gender: GenderEnum | None
+    date_of_birth: date | None
     role: UserRoleEnum
     status: UserStatusEnum
     created_at: datetime

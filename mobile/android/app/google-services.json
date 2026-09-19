@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "21694956948",
+    "project_id": "careflow-hospital-system-c8ca4",
+    "storage_bucket": "careflow-hospital-system-c8ca4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:21694956948:android:2e1b86e2e8912489f5bb81",
+        "android_client_info": {
+          "package_name": "com.example.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgjFx7ugdQb8TcTr5zD8qI6pGnqQYs3Yk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

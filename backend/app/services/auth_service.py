@@ -1,27 +1,106 @@
 from sqlalchemy.orm import Session
 
-from app.models.user import User
-from app.repositories.user_repository import UserRepository
-from app.schemas.auth import RegisterRequest, RegisterResponse, LoginRequest, LoginResponse
-from app.utils.security import hash_password, create_access_token, verify_password
 from app.core.enums import UserRoleEnum, UserStatusEnum
 from app.core.exceptions import (
-    UsernameAlreadyExistsException,
     EmailAlreadyExistsException,
-    PhoneNumberAlreadyExistsException,
-    InvalidCredentialsException,
     ForbiddenException,
     InactiveAccountException,
+    InvalidCredentialsException,
+    PhoneNumberAlreadyExistsException,
+    UsernameAlreadyExistsException,
+)
+from app.models.user import User
+from app.repositories.user_repository import UserRepository
+from app.schemas.auth import (
+    LoginRequest,
+    LoginResponse,
+    RegisterRequest,
+    RegisterResponse,
+)
+from app.utils.security import (
+    create_access_token,
+    hash_password,
+    verify_password,
 )
 
+
 class AuthService:
-    def __init__(
-        self,
-        db: Session,
-    ):
+    def __init__(self, db: Session):
         self.db = db
         self.user_repository = UserRepository(db)
 
+    # ==========================================================
+    # Public Methods
+    # ==========================================================
+
+    def register(
+        self,
+        request: RegisterRequest,
+    ) -> RegisterResponse:
+        try:
+            self._check_username_exists(request.username)
+            self._check_email_exists(request.email)
+            self._check_phone_number_exists(request.phone_number)
+
+            patient = self._build_patient(request)
+
+            self.user_repository.create(patient)
+
+            self.db.commit()
+            self.db.refresh(patient)
+
+            return RegisterResponse(
+                id=patient.id,
+                username=patient.username,
+                email=patient.email,
+                message="Register successfully.",
+            )
+
+        except Exception:
+            self.db.rollback()
+            raise
+
+    def login(
+        self,
+        request: LoginRequest,
+    ) -> LoginResponse:
+        user = self._get_user_by_username(
+            username=request.username,
+        )
+
+        self._verify_password(
+            plain_password=request.password,
+            hashed_password=user.password,
+        )
+
+        self._validate_login_user(
+            user=user,
+        )
+
+        return self._create_login_response(user)
+
+    def login_staff(
+        self,
+        request: LoginRequest,
+    ) -> LoginResponse:
+        user = self._get_user_by_username(
+            username=request.username,
+        )
+
+        self._verify_password(
+            plain_password=request.password,
+            hashed_password=user.password,
+        )
+
+        self._validate_staff_login_user(
+            user=user,
+        )
+
+        return self._create_login_response(user)
+
+    # ==========================================================
+    # Private Methods
+    # ==========================================================
 
     def _check_username_exists(
         self,
@@ -32,7 +111,6 @@ class AuthService:
         if user is not None:
             raise UsernameAlreadyExistsException()
 
-
     def _check_email_exists(
         self,
         email: str,
@@ -41,7 +119,6 @@ class AuthService:
 
         if user is not None:
             raise EmailAlreadyExistsException()
-
 
     def _check_phone_number_exists(
         self,
@@ -52,25 +129,23 @@ class AuthService:
         if user is not None:
             raise PhoneNumberAlreadyExistsException()
 
-
     def _build_patient(
-          self,
-          request: RegisterRequest,
-      ) -> User:
-          return User(
-              username=request.username,
-              first_name=request.first_name,
-              last_name=request.last_name,
-              date_of_birth=request.date_of_birth,
-              gender=request.gender,
-              phone_number=request.phone_number,
-              email=request.email,
-              password=hash_password(request.password),
-              role=UserRoleEnum.PATIENT,
-              status=UserStatusEnum.ACTIVE,
-          )
-          
-          
+        self,
+        request: RegisterRequest,
+    ) -> User:
+        return User(
+            username=request.username,
+            first_name=request.first_name,
+            last_name=request.last_name,
+            date_of_birth=request.date_of_birth,
+            gender=request.gender,
+            phone_number=request.phone_number,
+            email=request.email,
+            password=hash_password(request.password),
+            role=UserRoleEnum.PATIENT,
+            status=UserStatusEnum.ACTIVE,
+        )
+
     def _get_user_by_username(
         self,
         username: str,
@@ -78,12 +153,12 @@ class AuthService:
         user = self.user_repository.get_by_username(
             username=username,
         )
+
         if user is None:
             raise InvalidCredentialsException()
 
         return user
-      
-      
+
     def _verify_password(
         self,
         plain_password: str,
@@ -94,7 +169,7 @@ class AuthService:
             hashed_password=hashed_password,
         ):
             raise InvalidCredentialsException()
-          
+
     def _validate_login_user(
         self,
         user: User,
@@ -104,64 +179,30 @@ class AuthService:
 
         if user.status != UserStatusEnum.ACTIVE:
             raise InactiveAccountException()
-          
-          
-    def register(
-          self,
-          request: RegisterRequest,
-      ) -> RegisterResponse:
-          try:
-              self._check_username_exists(request.username)
-              self._check_email_exists(request.email)
-              self._check_phone_number_exists(request.phone_number)
 
-              patient = self._build_patient(request)
-
-              self.user_repository.create(patient)
-
-              self.db.commit()
-              self.db.refresh(patient)
-
-              return RegisterResponse(
-                  id=patient.id,
-                  username=patient.username,
-                  email=patient.email,
-                  message="Register successfully.",
-              )
-
-          except Exception:
-              self.db.rollback()
-              raise
-            
-            
-    def login(
+    def _validate_staff_login_user(
         self,
-        request: LoginRequest,
+        user: User,
+    ) -> None:
+        if user.role not in (
+            UserRoleEnum.DOCTOR,
+            UserRoleEnum.HOSPITAL_STAFF,
+        ):
+            raise ForbiddenException()
+
+        if user.status != UserStatusEnum.ACTIVE:
+            raise InactiveAccountException()
+
+    def _create_login_response(
+        self,
+        user: User,
     ) -> LoginResponse:
-        try:
-            user = self._get_user_by_username(
-                username=request.username,
-            )
+        access_token = create_access_token(
+            data={
+                "sub": str(user.id),
+            },
+        )
 
-            self._verify_password(
-                plain_password=request.password,
-                hashed_password=user.password,
-            )
-
-            self._validate_login_user(
-                user=user,
-            )
-
-            access_token = create_access_token(
-                data={
-                    "sub": str(user.id),
-                },
-            )
-
-            return LoginResponse(
-                access_token=access_token,
-            )
-
-        except Exception:
-            self.db.rollback()
-            raise
+        return LoginResponse(
+            access_token=access_token,
+        )

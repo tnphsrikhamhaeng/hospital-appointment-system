@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from app.models.user import User
     from app.models.doctor import Doctor
     from app.models.department import Department
+    from app.models.medical_record import MedicalRecord
 
 from sqlalchemy import (
     Date,
@@ -16,7 +17,6 @@ from sqlalchemy import (
     ForeignKey,
     String,
     Time,
-    UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects.postgresql import UUID
@@ -28,15 +28,6 @@ from app.core.enums import AppointmentStatusEnum
 
 class Appointment(Base):
     __tablename__ = "appointments"
-
-    __table_args__ = (
-        UniqueConstraint(
-            "doctor_id",
-            "appointment_date",
-            "start_time",
-            name="uq_appointments_doctor_date_start_time",
-        ),
-    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -141,4 +132,17 @@ class Appointment(Base):
     department: Mapped["Department"] = relationship(
         "Department",
         back_populates="appointments",
+    )
+
+    qr_code = relationship(
+        "AppointmentQRCode",
+        back_populates="appointment",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+    medical_record: Mapped["MedicalRecord | None"] = relationship(
+        "MedicalRecord",
+        back_populates="appointment",
+        uselist=False,
     )

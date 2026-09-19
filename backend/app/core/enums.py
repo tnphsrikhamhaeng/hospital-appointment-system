@@ -23,6 +23,7 @@ class DoctorPrefaceEnum(str, Enum):
     
 class DoctorStatusEnum(str, Enum):
     ACTIVE = "active"
+    INACTIVE = "inactive"
     ON_LEAVE = "on_leave"
     RESIGNED = "resigned"
     RETIRED = "retired"
@@ -38,8 +39,10 @@ class SpecializationStatusEnum(str, Enum):
 class AppointmentStatusEnum(str, Enum):
     PENDING = "pending"
     CONFIRMED = "confirmed"
+    CHECKED_IN = "checked_in"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
+    IN_PROGRESS = "in_progress"
     NO_SHOW = "no_show"
     
 class WeekdayEnum(str, Enum):
@@ -50,3 +53,22 @@ class WeekdayEnum(str, Enum):
     FRIDAY = "friday"
     SATURDAY = "saturday"
     SUNDAY = "sunday"
+    
+class NotificationTypeEnum(str, Enum):
+    APPOINTMENT_CONFIRMED = "appointment_confirmed"
+    REMINDER_3_DAYS = "reminder_3_days"
+    REMINDER_1_DAY = "reminder_1_day"
+    REMINDER_30_MINUTES = "reminder_30_minutes"
+    READY_FOR_CONSULTATION = "ready_for_consultation"
+    CONSULTATION_DELAYED = "consultation_delayed"
+    APPOINTMENT_CANCELLED = "appointment_cancelled"
+    APPOINTMENT_RESCHEDULED = "appointment_rescheduled"
+    
+class NotificationStatusEnum(str, Enum):
+    SENT = "sent"
+    FAILED = "failed"
+    READ = "read"
+    
+class DevicePlatformEnum(str, Enum):
+    ANDROID = "android"
+    IOS = "ios"

@@ -6,6 +6,9 @@ from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.dependencies import get_current_user, require_roles
+from app.core.enums import UserRoleEnum
+from app.models.user import User
 from app.schemas.doctor_schedule_template import (
     DoctorScheduleTemplateCreateRequest,
     DoctorScheduleTemplateResponse,
@@ -14,6 +17,7 @@ from app.schemas.doctor_schedule_template import (
 from app.services.doctor_schedule_template_service import (
     DoctorScheduleTemplateService,
 )
+
 
 router = APIRouter(
     prefix="/doctor-schedule-templates",
@@ -29,10 +33,26 @@ router = APIRouter(
 def create_doctor_schedule_template(
     request: DoctorScheduleTemplateCreateRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(UserRoleEnum.HOSPITAL_STAFF),
+    ),
 ) -> DoctorScheduleTemplateResponse:
     service = DoctorScheduleTemplateService(db)
 
     return service.create_template(request)
+
+
+@router.get(
+    "/my",
+    response_model=list[DoctorScheduleTemplateResponse],
+)
+def get_my_doctor_schedule_templates(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[DoctorScheduleTemplateResponse]:
+    service = DoctorScheduleTemplateService(db)
+
+    return service.get_my_schedule(current_user)
 
 
 @router.get(
@@ -42,6 +62,7 @@ def create_doctor_schedule_template(
 def get_doctor_schedule_template(
     template_id: uuid.UUID,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> DoctorScheduleTemplateResponse:
     service = DoctorScheduleTemplateService(db)
 
@@ -55,6 +76,7 @@ def get_doctor_schedule_template(
 def list_doctor_schedule_templates(
     doctor_id: uuid.UUID,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> list[DoctorScheduleTemplateResponse]:
     service = DoctorScheduleTemplateService(db)
 
@@ -69,6 +91,9 @@ def update_doctor_schedule_template(
     template_id: uuid.UUID,
     request: DoctorScheduleTemplateUpdateRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(UserRoleEnum.HOSPITAL_STAFF),
+    ),
 ) -> DoctorScheduleTemplateResponse:
     service = DoctorScheduleTemplateService(db)
 
@@ -85,6 +110,9 @@ def update_doctor_schedule_template(
 def delete_doctor_schedule_template(
     template_id: uuid.UUID,
     db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_roles(UserRoleEnum.HOSPITAL_STAFF),
+    ),
 ) -> Response:
     service = DoctorScheduleTemplateService(db)
 

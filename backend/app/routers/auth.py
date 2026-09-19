@@ -3,12 +3,13 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.schemas.auth import (
-    RegisterRequest,
-    RegisterResponse,
     LoginRequest,
     LoginResponse,
+    RegisterRequest,
+    RegisterResponse,
 )
 from app.services.auth_service import AuthService
+
 
 router = APIRouter(
     prefix="/auth",
@@ -28,8 +29,8 @@ def register(
     auth_service = AuthService(db)
 
     return auth_service.register(request)
-  
-  
+
+
 @router.post(
     "/login",
     response_model=LoginResponse,
@@ -42,3 +43,17 @@ def login(
     service = AuthService(db)
 
     return service.login(request)
+
+
+@router.post(
+    "/staff-login",
+    response_model=LoginResponse,
+    status_code=status.HTTP_200_OK,
+)
+def staff_login(
+    request: LoginRequest,
+    db: Session = Depends(get_db),
+) -> LoginResponse:
+    service = AuthService(db)
+
+    return service.login_staff(request)

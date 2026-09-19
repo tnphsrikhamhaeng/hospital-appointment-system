@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, String, Text, func,Integer
+from sqlalchemy import DateTime, Enum, String, Text, func, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -38,12 +38,17 @@ class Department(Base):
         nullable=True,
     )
 
+    image_url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+    )
+
     slot_duration_minutes: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
         default=30,
     )
-        
+
     status: Mapped[DepartmentStatusEnum] = mapped_column(
         Enum(
             DepartmentStatusEnum,
@@ -53,6 +58,7 @@ class Department(Base):
         default=DepartmentStatusEnum.ACTIVE,
         nullable=False,
     )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -77,6 +83,6 @@ class Department(Base):
     )
 
     appointments: Mapped[list["Appointment"]] = relationship(
-    "Appointment",
-    back_populates="department",
+        "Appointment",
+        back_populates="department",
     )

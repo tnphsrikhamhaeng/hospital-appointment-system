@@ -25,3 +25,9 @@ alembic/versions/__pycache__/
 # Coverage
 .coverage
 htmlcov/
+
+# Uploads
+app/uploads/
+
+# Local cleanup scripts
+cleanup_test_data.py

@@ -1,23 +1,24 @@
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from app.models.department import Department
-    from app.models.doctor_specialization import DoctorSpecialization
-    from app.models.specialization import Specialization
-    from app.models.doctor_schedule_template import DoctorScheduleTemplate
-    from app.models.appointment import Appointment
-
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Enum, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.enums import DoctorPrefaceEnum, DoctorStatusEnum
 from app.core.database import Base
+from app.core.enums import DoctorPrefaceEnum, DoctorStatusEnum
+
+if TYPE_CHECKING:
+    from app.models.appointment import Appointment
+    from app.models.department import Department
+    from app.models.doctor_schedule_template import DoctorScheduleTemplate
+    from app.models.doctor_specialization import DoctorSpecialization
+    from app.models.medical_record import MedicalRecord
+    from app.models.specialization import Specialization
+    from app.models.user import User
 
 
 class Doctor(Base):
@@ -29,12 +30,22 @@ class Doctor(Base):
         default=uuid.uuid4,
     )
 
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "users.id",
+            name="fk_doctors_user_id",
+        ),
+        nullable=True,
+        unique=True,
+    )
+
     department_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey(
-        "departments.id",
-        name="fk_doctors_department_id",
-    ),
+            "departments.id",
+            name="fk_doctors_department_id",
+        ),
         nullable=False,
     )
 
@@ -103,6 +114,12 @@ class Doctor(Base):
         nullable=False,
     )
 
+    user: Mapped["User | None"] = relationship(
+        "User",
+        back_populates="doctor",
+        uselist=False,
+    )
+
     department: Mapped["Department"] = relationship(
         "Department",
         back_populates="doctors",
@@ -112,18 +129,24 @@ class Doctor(Base):
         "DoctorSpecialization",
         back_populates="doctor",
     )
+
     specializations: Mapped[list["Specialization"]] = relationship(
         "Specialization",
         secondary="doctor_specializations",
         viewonly=True,
     )
-    
+
     doctor_schedule_templates: Mapped[list["DoctorScheduleTemplate"]] = relationship(
-    "DoctorScheduleTemplate",
-    back_populates="doctor",
+        "DoctorScheduleTemplate",
+        back_populates="doctor",
     )
-    
+
     appointments: Mapped[list["Appointment"]] = relationship(
-    "Appointment",
-    back_populates="doctor",
+        "Appointment",
+        back_populates="doctor",
+    )
+
+    medical_records: Mapped[list["MedicalRecord"]] = relationship(
+        "MedicalRecord",
+        back_populates="doctor",
     )
