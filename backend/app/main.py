@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -89,6 +90,8 @@ app.include_router(upload.router)
 
 
 UPLOAD_DIR = Path(__file__).resolve().parent / "uploads"
+
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app.mount(
     "/uploads",
