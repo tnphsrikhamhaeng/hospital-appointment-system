@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const apiBaseUrl = "http://127.0.0.1:8000";
+const apiBaseUrl = "https://careflow-backend-o788.onrender.com";
 
 const api = axios.create({
   baseURL: apiBaseUrl,
