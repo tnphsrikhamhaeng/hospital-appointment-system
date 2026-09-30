@@ -46,11 +46,7 @@ class AppointmentRescheduleRequest(BaseModel):
 
 class AppointmentStatusUpdateRequest(BaseModel):
     status: AppointmentStatusEnum
-    room_number: str | None = Field(
-        default=None,
-        min_length=1,
-        max_length=20,
-    )
+    room_number: str | None = Field(default=None, min_length=1)
 
 
 class AppointmentResponse(BaseModel):

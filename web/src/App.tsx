@@ -1,9 +1,4 @@
-import {
-  Navigate,
-  Route,
-  Routes,
-  useLocation,
-} from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 import LoginPage from "./features/auth/pages/LoginPage";
@@ -22,77 +17,48 @@ import ChangePasswordPage from "./features/profile/pages/ChangePasswordPage";
 import DoctorHistoryPage from "./features/medical-record/pages/DoctorHistoryPage";
 import DoctorMedicalRecordDetailPage from "./features/medical-record/pages/DoctorMedicalRecordDetailPage";
 import StaffDoctorSchedulePage from "./features/staff/pages/StaffDoctorSchedulePage";
+import StaffLayout from "./features/staff/layouts/StaffLayout";
+import DoctorLayout from "./features/doctor/layouts/DoctorLayout";
 
-function AppRoutes({
-  location,
-}: {
-  location: ReturnType<typeof useLocation>;
-}) {
+function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
   return (
     <Routes location={location}>
-      <Route
-        path="/"
-        element={<Navigate to="/login" replace />}
-      />
+      <Route path="/" element={<Navigate to="/login" replace />} />
 
-      <Route
-        path="/login"
-        element={<LoginPage />}
-      />
+      <Route path="/login" element={<LoginPage />} />
 
       <Route
         path="/doctor"
         element={
           <ProtectedRoute allowedRole="doctor">
-            <DoctorPage />
+            <DoctorLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<DoctorPage />} />
 
-      <Route
-        path="/doctor/history"
-        element={
-          <ProtectedRoute allowedRole="doctor">
-            <DoctorHistoryPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route path="history" element={<DoctorHistoryPage />} />
 
-      <Route
-        path="/doctor/history/detail"
-        element={
-          <ProtectedRoute allowedRole="doctor">
-            <DoctorMedicalRecordDetailPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="history/detail"
+          element={<DoctorMedicalRecordDetailPage />}
+        />
 
-      <Route
-        path="/doctor/schedule"
-        element={
-          <ProtectedRoute allowedRole="doctor">
-            <DoctorSchedulePage />
-          </ProtectedRoute>
-        }
-      />
+        <Route path="schedule" element={<DoctorSchedulePage />} />
 
-      <Route
-        path="/doctor/change-password"
-        element={
-          <ProtectedRoute allowedRole="doctor">
-            <ChangePasswordPage />
-          </ProtectedRoute>
-        }
-      />
+        <Route path="change-password" element={<ChangePasswordPage />} />
+      </Route>
 
       <Route
         path="/medical-record"
         element={
           <ProtectedRoute allowedRole="doctor">
-            <MedicalRecordPage />
+            <DoctorLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<MedicalRecordPage />} />
+      </Route>
 
       <Route
         path="/appointment-patient"
@@ -111,84 +77,35 @@ function AppRoutes({
         path="/staff"
         element={
           <ProtectedRoute allowedRole="hospital_staff">
-            <StaffCheckInPage />
+            <StaffLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<StaffCheckInPage />} />
+
+        <Route path="create" element={<CreateStaffPage />} />
+
+        <Route path="doctors" element={<DoctorListPage />} />
+
+        <Route path="doctors/create" element={<CreateDoctorPage />} />
+
+        <Route path="doctors/edit" element={<EditDoctorPage />} />
+
+        <Route path="doctors/schedule" element={<StaffDoctorSchedulePage />} />
+
+        <Route path="departments" element={<DepartmentManagementPage />} />
+
+        <Route
+          path="specializations"
+          element={<Navigate to="/staff/departments" replace />}
+        />
+
+        <Route path="change-password" element={<ChangePasswordPage />} />
+      </Route>
 
       <Route
         path="/staff/check-in"
-        element={
-          <Navigate to="/staff" replace />
-        }
-      />
-
-      <Route
-        path="/staff/create"
-        element={
-          <ProtectedRoute allowedRole="hospital_staff">
-            <CreateStaffPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/staff/doctors/create"
-        element={
-          <ProtectedRoute allowedRole="hospital_staff">
-            <CreateDoctorPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/staff/doctors"
-        element={
-          <ProtectedRoute allowedRole="hospital_staff">
-            <DoctorListPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/staff/doctors/edit"
-        element={
-          <ProtectedRoute allowedRole="hospital_staff">
-            <EditDoctorPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/staff/doctors/schedule"
-        element={
-          <ProtectedRoute allowedRole="hospital_staff">
-            <StaffDoctorSchedulePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/staff/departments"
-        element={
-          <ProtectedRoute allowedRole="hospital_staff">
-            <DepartmentManagementPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/staff/specializations"
-        element={
-          <Navigate to="/staff/departments" replace />
-        }
-      />
-
-      <Route
-        path="/staff/change-password"
-        element={
-          <ProtectedRoute allowedRole="hospital_staff">
-            <ChangePasswordPage />
-          </ProtectedRoute>
-        }
+        element={<Navigate to="/staff" replace />}
       />
     </Routes>
   );
@@ -197,18 +114,14 @@ function AppRoutes({
 function PageTransition() {
   const location = useLocation();
 
-  const [displayLocation, setDisplayLocation] =
-    useState(location);
+  const [displayLocation, setDisplayLocation] = useState(location);
 
-  const [isTransitioning, setIsTransitioning] =
-    useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
-    const currentKey =
-      `${displayLocation.pathname}${displayLocation.search}`;
+    const currentKey = `${displayLocation.pathname}${displayLocation.search}`;
 
-    const nextKey =
-      `${location.pathname}${location.search}`;
+    const nextKey = `${location.pathname}${location.search}`;
 
     if (currentKey === nextKey) {
       return;
@@ -224,11 +137,7 @@ function PageTransition() {
     return () => {
       window.clearTimeout(timer);
     };
-  }, [
-    location,
-    displayLocation.pathname,
-    displayLocation.search,
-  ]);
+  }, [location, displayLocation.pathname, displayLocation.search]);
 
   return (
     <div

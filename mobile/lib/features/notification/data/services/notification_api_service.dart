@@ -72,4 +72,13 @@ class NotificationApiService {
       rethrow;
     }
   }
+  Future<void> clearAllNotifications() async {
+    try {
+      await _apiClient.dio.delete(
+        '/notifications',
+      );
+    } on DioException {
+      rethrow;
+    }
+  }
 }

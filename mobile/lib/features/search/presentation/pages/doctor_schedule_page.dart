@@ -446,60 +446,77 @@ class _DoctorSchedulePageState extends State<DoctorSchedulePage> {
   }
 
   bool _isSlotBooked(AppointmentSlot slot, DateTime date) {
-    final slotStart = _timeToMinutes(slot.startTime);
+    final slotStart = _buildDateTime(date, slot.startTime);
 
-    final slotEnd = _timeToMinutes(slot.endTime);
+    final slotEnd = _buildDateTime(date, slot.endTime);
 
-    bool overlapsDoctorScheduleAppointment(
-      DoctorScheduleAppointmentModel appointment,
-    ) {
-      if (appointment.status == AppointmentStatus.cancelled) {
-        return false;
-      }
-
-      if (widget.isEditMode &&
-          widget.appointmentId != null &&
-          appointment.id == widget.appointmentId) {
-        return false;
-      }
-
-      final appointmentStart = _timeToMinutes(appointment.startTime);
-
-      final appointmentEnd = _timeToMinutes(appointment.endTime);
-
-      return appointmentStart < slotEnd && appointmentEnd > slotStart;
+    if (!slotEnd.isAfter(slotStart)) {
+      return false;
     }
 
-    bool overlapsPatientAppointment(AppointmentModel appointment) {
-      if (appointment.status == AppointmentStatus.cancelled) {
-        return false;
-      }
+    bool overlaps(DateTime appointmentStart, DateTime appointmentEnd) {
+      return appointmentStart.isBefore(slotEnd) &&
+          appointmentEnd.isAfter(slotStart);
+    }
 
-      if (widget.isEditMode &&
+    bool isExcludedAppointment(String appointmentId) {
+      return widget.isEditMode &&
           widget.appointmentId != null &&
-          appointment.id == widget.appointmentId) {
-        return false;
-      }
-
-      final appointmentStart = _timeToMinutes(appointment.startTime);
-
-      final appointmentEnd = _timeToMinutes(appointment.endTime);
-
-      return appointmentStart < slotEnd && appointmentEnd > slotStart;
+          appointmentId == widget.appointmentId;
     }
 
     for (final appointment in _appointmentsForSelectedDate) {
-      if (overlapsDoctorScheduleAppointment(appointment)) {
+      if (appointment.status == AppointmentStatus.cancelled) {
+        continue;
+      }
+
+      if (isExcludedAppointment(appointment.id)) {
+        continue;
+      }
+
+      final appointmentStart = _buildDateTime(
+        appointment.appointmentDate,
+        appointment.startTime,
+      );
+
+      var appointmentEnd = _buildDateTime(
+        appointment.appointmentDate,
+        appointment.endTime,
+      );
+
+      if (!appointmentEnd.isAfter(appointmentStart)) {
+        appointmentEnd = appointmentEnd.add(const Duration(days: 1));
+      }
+
+      if (overlaps(appointmentStart, appointmentEnd)) {
         return true;
       }
     }
 
     for (final appointment in _patientAppointments) {
-      if (!_isSameDate(appointment.appointmentDate, date)) {
+      if (appointment.status == AppointmentStatus.cancelled) {
         continue;
       }
 
-      if (overlapsPatientAppointment(appointment)) {
+      if (isExcludedAppointment(appointment.id)) {
+        continue;
+      }
+
+      final appointmentStart = _buildDateTime(
+        appointment.appointmentDate,
+        appointment.startTime,
+      );
+
+      var appointmentEnd = _buildDateTime(
+        appointment.appointmentDate,
+        appointment.endTime,
+      );
+
+      if (!appointmentEnd.isAfter(appointmentStart)) {
+        appointmentEnd = appointmentEnd.add(const Duration(days: 1));
+      }
+
+      if (overlaps(appointmentStart, appointmentEnd)) {
         return true;
       }
     }
@@ -507,14 +524,20 @@ class _DoctorSchedulePageState extends State<DoctorSchedulePage> {
     return false;
   }
 
-  int _timeToMinutes(String value) {
-    final parts = value.split(':');
+  DateTime _buildDateTime(DateTime date, String timeValue) {
+    final parts = timeValue.split(':');
 
     if (parts.length < 2) {
-      return 0;
+      return DateTime(date.year, date.month, date.day);
     }
 
-    return int.parse(parts[0]) * 60 + int.parse(parts[1]);
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+      int.parse(parts[0]),
+      int.parse(parts[1]),
+    );
   }
 
   String _formatTime(DateTime value) {
@@ -565,8 +588,18 @@ class _DoctorSchedulePageState extends State<DoctorSchedulePage> {
       return trimmedUrl;
     }
 
-    if (uri.host == 'localhost' || uri.host == '127.0.0.1') {
-      return uri.replace(host: '10.0.2.2').toString();
+    final baseUri = Uri.parse(ApiClient.baseUrl);
+
+    if (uri.host == 'localhost' ||
+        uri.host == '127.0.0.1' ||
+        uri.host == '10.0.2.2') {
+      return uri
+          .replace(
+            scheme: baseUri.scheme,
+            host: baseUri.host,
+            port: baseUri.hasPort ? baseUri.port : null,
+          )
+          .toString();
     }
 
     return trimmedUrl;
@@ -586,6 +619,9 @@ class _DoctorSchedulePageState extends State<DoctorSchedulePage> {
         height: 48,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
+          debugPrint('DOCTOR IMAGE URL: $imageUrl');
+          debugPrint('DOCTOR IMAGE ERROR: $error');
+          debugPrint('DOCTOR IMAGE STACK: $stackTrace');
           return _buildDoctorPlaceholder();
         },
       ),

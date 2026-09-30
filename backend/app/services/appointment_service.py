@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import uuid
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date, time
 from zoneinfo import ZoneInfo
+
+from fastapi import BackgroundTasks
 
 from sqlalchemy.orm import Session
 
+from app.core.database import SessionLocal
 from app.core.enums import (
     AppointmentStatusEnum,
     DepartmentStatusEnum,
@@ -20,6 +23,7 @@ from app.core.exceptions import (
     NotFoundException,
 )
 from app.models.appointment import Appointment
+from app.models.department import Department
 from app.repositories.appointment_repository import AppointmentRepository
 from app.repositories.department_repository import DepartmentRepository
 from app.repositories.doctor_repository import DoctorRepository
@@ -75,12 +79,16 @@ class AppointmentService:
         self.schedule_repository = (
             DoctorScheduleTemplateRepository(db)
         )
-        self.notification_service = NotificationService(db)
+
+    # =========================================================
+    # CREATE APPOINTMENT
+    # =========================================================
 
     def create_appointment(
         self,
         patient_id,
         request: AppointmentCreateRequest,
+        background_tasks: BackgroundTasks,
     ) -> AppointmentResponse:
 
         patient = self.user_repository.get_by_id(patient_id)
@@ -140,25 +148,35 @@ class AppointmentService:
             appointment
         )
 
-        self.notification_service.create_notification(
-            appointment_id=appointment.id,
-            patient_id=patient.id,
-            notification_type=(
-                NotificationTypeEnum.APPOINTMENT_CONFIRMED
-            ),
-            title="ยืนยันการนัดหมาย",
-            body=(
+        # =====================================================
+        # COMMIT APPOINTMENT FIRST
+        # =====================================================
+
+        self.db.commit()
+        self.db.refresh(appointment)
+
+        # =====================================================
+        # SEND NOTIFICATION IN BACKGROUND
+        # =====================================================
+
+        background_tasks.add_task(
+            self._send_appointment_notification_background,
+            appointment.id,
+            NotificationTypeEnum.APPOINTMENT_CONFIRMED,
+            "ยืนยันการนัดหมาย",
+            (
                 "การนัดหมายของคุณได้รับการยืนยันแล้ว "
                 f"{self._format_appointment_datetime(appointment)}"
             ),
         )
 
-        self.db.commit()
-        self.db.refresh(appointment)
-
         return AppointmentResponse.model_validate(
             appointment
         )
+
+    # =========================================================
+    # GET APPOINTMENT
+    # =========================================================
 
     def get_appointment(
         self,
@@ -177,6 +195,10 @@ class AppointmentService:
         return AppointmentResponse.model_validate(
             appointment
         )
+
+    # =========================================================
+    # GET APPOINTMENT PATIENT
+    # =========================================================
 
     def get_appointment_patient(
         self,
@@ -223,6 +245,10 @@ class AppointmentService:
 
         return patient
 
+    # =========================================================
+    # GET PATIENT APPOINTMENTS
+    # =========================================================
+
     def get_patient_appointments(
         self,
         patient_id,
@@ -250,6 +276,10 @@ class AppointmentService:
             for appointment in appointments
         ]
 
+    # =========================================================
+    # GET DOCTOR APPOINTMENTS
+    # =========================================================
+
     def get_doctor_appointments(
         self,
         doctor_id,
@@ -276,6 +306,10 @@ class AppointmentService:
             )
             for appointment in appointments
         ]
+
+    # =========================================================
+    # GET DOCTOR SCHEDULE
+    # =========================================================
 
     def get_doctor_schedule(
         self,
@@ -315,10 +349,15 @@ class AppointmentService:
             for appointment in appointments
         ]
 
+    # =========================================================
+    # CANCEL APPOINTMENT
+    # =========================================================
+
     def cancel_appointment(
         self,
         appointment_id,
         request: AppointmentCancelRequest,
+        background_tasks: BackgroundTasks,
     ) -> AppointmentResponse:
 
         appointment = self._get_appointment_or_404(
@@ -342,41 +381,53 @@ class AppointmentService:
             appointment
         )
 
-        self.notification_service.create_notification(
-            appointment_id=appointment.id,
-            patient_id=appointment.patient_id,
-            notification_type=(
-                NotificationTypeEnum.APPOINTMENT_CANCELLED
-            ),
-            title="ยกเลิกการนัดหมาย",
-            body=(
+        # =====================================================
+        # COMMIT FIRST
+        # =====================================================
+
+        self.db.commit()
+        self.db.refresh(appointment)
+
+        # =====================================================
+        # SEND NOTIFICATION IN BACKGROUND
+        # =====================================================
+
+        background_tasks.add_task(
+            self._send_appointment_notification_background,
+            appointment.id,
+            NotificationTypeEnum.APPOINTMENT_CANCELLED,
+            "ยกเลิกการนัดหมาย",
+            (
                 "การนัดหมายของคุณถูกยกเลิกแล้ว "
                 f"{self._format_appointment_datetime(appointment)}"
             ),
         )
 
-        self.db.commit()
-        self.db.refresh(appointment)
-
         return AppointmentResponse.model_validate(
             appointment
         )
+
+    # =========================================================
+    # UPDATE STATUS
+    # =========================================================
 
     def update_status(
         self,
         appointment_id,
         request: AppointmentStatusUpdateRequest,
         current_user,
+        background_tasks: BackgroundTasks,
     ) -> AppointmentResponse:
 
         appointment = self._get_appointment_or_404(
             appointment_id
         )
 
-        # ==========================================
+        # =====================================================
         # HOSPITAL STAFF
         # CONFIRMED -> CHECKED_IN only
-        # ==========================================
+        # =====================================================
+
         if current_user.role == UserRoleEnum.HOSPITAL_STAFF:
 
             if (
@@ -398,11 +449,12 @@ class AppointmentService:
                     )
                 )
 
-        # ==========================================
+        # =====================================================
         # DOCTOR
         # CHECKED_IN -> IN_PROGRESS
         # IN_PROGRESS -> NO_SHOW
-        # ==========================================
+        # =====================================================
+
         elif current_user.role == UserRoleEnum.DOCTOR:
 
             doctor = self.doctor_repository.get_by_user_id(
@@ -422,13 +474,18 @@ class AppointmentService:
                     )
                 )
 
-            # ------------------------------
+            # -------------------------------------------------
             # Doctor calls patient
-            # ------------------------------
+            # -------------------------------------------------
+
             if (
                 request.status
                 == AppointmentStatusEnum.IN_PROGRESS
             ):
+
+                self._ensure_call_allowed(
+                    appointment
+                )
 
                 if request.room_number is None:
                     raise ConflictException(
@@ -438,9 +495,10 @@ class AppointmentService:
                         )
                     )
 
-            # ------------------------------
+            # -------------------------------------------------
             # Doctor marks patient as NO_SHOW
-            # ------------------------------
+            # -------------------------------------------------
+
             elif (
                 request.status
                 == AppointmentStatusEnum.NO_SHOW
@@ -475,47 +533,70 @@ class AppointmentService:
                 )
             )
 
+        # =====================================================
+        # UPDATE STATUS
+        # =====================================================
+
         self._transition_status(
             appointment,
             request.status,
         )
 
-        # ==========================================
-        # Notification when doctor calls patient
-        # ==========================================
-        if (
-            request.status
-            == AppointmentStatusEnum.IN_PROGRESS
-        ):
-            self.notification_service.create_notification(
-                appointment_id=appointment.id,
-                patient_id=appointment.patient_id,
-                notification_type=(
-                    NotificationTypeEnum.READY_FOR_CONSULTATION
-                ),
-                title="พร้อมเข้ารับการตรวจ",
-                body=(
-                    "แพทย์พร้อมให้บริการตรวจแล้ว "
-                    f"กรุณาไปที่ห้องตรวจ {request.room_number} "
-                    f"{self._format_appointment_datetime(appointment)}"
-                ),
-            )
-
         self.appointment_repository.update(
             appointment
         )
 
+        # =====================================================
+        # COMMIT FIRST
+        # =====================================================
+
         self.db.commit()
         self.db.refresh(appointment)
+
+        # =====================================================
+        # NOTIFICATION IN BACKGROUND
+        # =====================================================
+
+        if request.status == AppointmentStatusEnum.CHECKED_IN:
+
+            background_tasks.add_task(
+                self._send_status_notification_background,
+                appointment.id,
+                request.status,
+                None,
+            )
+
+        elif request.status == AppointmentStatusEnum.IN_PROGRESS:
+
+            background_tasks.add_task(
+                self._send_status_notification_background,
+                appointment.id,
+                request.status,
+                request.room_number,
+            )
+
+        elif request.status == AppointmentStatusEnum.NO_SHOW:
+
+            background_tasks.add_task(
+                self._send_status_notification_background,
+                appointment.id,
+                request.status,
+                None,
+            )
 
         return AppointmentResponse.model_validate(
             appointment
         )
 
+    # =========================================================
+    # RESCHEDULE APPOINTMENT
+    # =========================================================
+
     def reschedule_appointment(
         self,
         appointment_id,
         request: AppointmentRescheduleRequest,
+        background_tasks: BackgroundTasks,
     ) -> AppointmentResponse:
 
         appointment = self._get_appointment_or_404(
@@ -527,7 +608,7 @@ class AppointmentService:
                 detail=(
                     f"Appointment with status "
                     f"'{appointment.status.value}' "
-                    f"cannot be rescheduled."
+                    "cannot be rescheduled."
                 )
             )
 
@@ -584,25 +665,35 @@ class AppointmentService:
             appointment
         )
 
-        self.notification_service.create_notification(
-            appointment_id=appointment.id,
-            patient_id=appointment.patient_id,
-            notification_type=(
-                NotificationTypeEnum.APPOINTMENT_RESCHEDULED
-            ),
-            title="เลื่อนการนัดหมาย",
-            body=(
+        # =====================================================
+        # COMMIT FIRST
+        # =====================================================
+
+        self.db.commit()
+        self.db.refresh(appointment)
+
+        # =====================================================
+        # SEND NOTIFICATION IN BACKGROUND
+        # =====================================================
+
+        background_tasks.add_task(
+            self._send_appointment_notification_background,
+            appointment.id,
+            NotificationTypeEnum.APPOINTMENT_RESCHEDULED,
+            "เลื่อนการนัดหมาย",
+            (
                 "การนัดหมายของคุณถูกเลื่อนแล้ว "
                 f"{self._format_appointment_datetime(appointment)}"
             ),
         )
 
-        self.db.commit()
-        self.db.refresh(appointment)
-
         return AppointmentResponse.model_validate(
             appointment
         )
+
+    # =========================================================
+    # SEARCH
+    # =========================================================
 
     def search_appointments(
         self,
@@ -626,6 +717,10 @@ class AppointmentService:
             )
             for appointment in appointments
         ]
+
+    # =========================================================
+    # HELPERS
+    # =========================================================
 
     def _get_active_doctor(
         self,
@@ -696,7 +791,9 @@ class AppointmentService:
         appointment_datetime = datetime.combine(
             appointment_date,
             start_time,
-        ).replace(tzinfo=HOSPITAL_TIMEZONE)
+        ).replace(
+            tzinfo=HOSPITAL_TIMEZONE
+        )
 
         minimum_booking_datetime = (
             datetime.now(HOSPITAL_TIMEZONE)
@@ -708,6 +805,30 @@ class AppointmentService:
                 detail=(
                     "Appointment must be booked "
                     "at least 1 hour in advance."
+                )
+            )
+
+    def _ensure_call_allowed(
+        self,
+        appointment: Appointment,
+    ) -> None:
+
+        appointment_start = datetime.combine(
+            appointment.appointment_date,
+            appointment.start_time,
+        ).replace(
+            tzinfo=HOSPITAL_TIMEZONE
+        )
+
+        now = datetime.now(
+            HOSPITAL_TIMEZONE
+        )
+
+        if now < appointment_start:
+            raise ConflictException(
+                detail=(
+                    "Patient cannot be called "
+                    "before the appointment time."
                 )
             )
 
@@ -747,6 +868,7 @@ class AppointmentService:
         )
 
         if now < no_show_time:
+
             remaining_seconds = (
                 no_show_time - now
             ).total_seconds()
@@ -771,51 +893,91 @@ class AppointmentService:
     def _validate_slot(
         self,
         *,
-        doctor_id,
-        department,
-        appointment_date,
-        start_time,
-    ):
+        doctor_id: uuid.UUID,
+        department: Department,
+        appointment_date: date,
+        start_time: time,
+    ) -> time:
 
         weekday = WeekdayEnum(
             appointment_date.strftime("%A").lower()
         )
 
-        schedule = (
-            self.schedule_repository.get_active_schedule(
-                doctor_id=doctor_id,
-                weekday=weekday,
-                start_time=start_time,
-            )
+        schedule = self.schedule_repository.get_active_schedule(
+            doctor_id=doctor_id,
+            weekday=weekday,
+            start_time=start_time,
         )
 
         if schedule is None:
             raise ConflictException(
-                detail=(
-                    "Doctor is not available "
-                    "at this time."
-                )
+                detail="Doctor is not available at this time."
             )
 
-        end_time = (
-            datetime.combine(
-                appointment_date,
-                start_time,
-            )
+        appointment_start = datetime.combine(
+            appointment_date,
+            start_time,
+        )
+
+        appointment_end = (
+            appointment_start
             + timedelta(
                 minutes=department.slot_duration_minutes
             )
-        ).time()
+        )
 
-        if end_time > schedule.end_time:
+        # ตารางปกติ
+        if schedule.start_time <= schedule.end_time:
+
+            schedule_start = datetime.combine(
+                appointment_date,
+                schedule.start_time,
+            )
+
+            schedule_end = datetime.combine(
+                appointment_date,
+                schedule.end_time,
+            )
+
+        # ตารางข้ามวัน เช่น 23:00 - 01:00
+        else:
+
+            if start_time >= schedule.start_time:
+
+                schedule_start = datetime.combine(
+                    appointment_date,
+                    schedule.start_time,
+                )
+
+                schedule_end = datetime.combine(
+                    appointment_date + timedelta(days=1),
+                    schedule.end_time,
+                )
+
+            else:
+
+                schedule_start = datetime.combine(
+                    appointment_date - timedelta(days=1),
+                    schedule.start_time,
+                )
+
+                schedule_end = datetime.combine(
+                    appointment_date,
+                    schedule.end_time,
+                )
+
+        if (
+            appointment_start < schedule_start
+            or appointment_end > schedule_end
+        ):
             raise ConflictException(
                 detail=(
-                    "Appointment exceeds "
-                    "doctor's schedule."
+                    "Appointment time is "
+                    "outside doctor's schedule."
                 )
             )
 
-        return end_time
+        return appointment_end.time()
 
     def _ensure_no_overlap(
         self,
@@ -944,11 +1106,160 @@ class AppointmentService:
             + 543
         )
 
-        time = appointment.start_time.strftime(
+        appointment_time = appointment.start_time.strftime(
             "%H:%M"
         )
 
         return (
             f"วันที่ {day} {month} {year} "
-            f"เวลา {time} น."
+            f"เวลา {appointment_time} น."
         )
+
+    # =========================================================
+    # BACKGROUND NOTIFICATION
+    # =========================================================
+
+    def _send_appointment_notification_background(
+        self,
+        appointment_id: uuid.UUID,
+        notification_type: NotificationTypeEnum,
+        title: str,
+        body: str,
+    ) -> None:
+
+        db = SessionLocal()
+
+        try:
+            appointment_repository = (
+                AppointmentRepository(db)
+            )
+
+            appointment = (
+                appointment_repository.get_by_id(
+                    appointment_id
+                )
+            )
+
+            if appointment is None:
+                return
+
+            notification_service = (
+                NotificationService(db)
+            )
+
+            notification_service.create_notification(
+                appointment_id=appointment.id,
+                patient_id=appointment.patient_id,
+                notification_type=notification_type,
+                title=title,
+                body=body,
+            )
+
+            db.commit()
+
+        except Exception :
+            db.rollback()
+            
+
+        finally:
+            db.close()
+
+    # =========================================================
+    # BACKGROUND STATUS NOTIFICATION
+    # =========================================================
+
+    def _send_status_notification_background(
+        self,
+        appointment_id: uuid.UUID,
+        status: AppointmentStatusEnum,
+        room_number: str | None = None,
+    ) -> None:
+
+        db = SessionLocal()
+
+        try:
+            appointment_repository = (
+                AppointmentRepository(db)
+            )
+
+            notification_service = (
+                NotificationService(db)
+            )
+
+            appointment = (
+                appointment_repository.get_by_id(
+                    appointment_id
+                )
+            )
+
+            if appointment is None:
+                return
+
+            # -------------------------------------------------
+            # CHECKED IN
+            # -------------------------------------------------
+
+            if status == AppointmentStatusEnum.CHECKED_IN:
+
+                notification_service.create_notification(
+                    appointment_id=appointment.id,
+                    patient_id=appointment.patient_id,
+                    notification_type=(
+                        NotificationTypeEnum
+                        .APPOINTMENT_CHECKED_IN
+                    ),
+                    title="เช็คอินสำเร็จ",
+                    body=(
+                        "คุณเช็คอินสำหรับการนัดหมายเรียบร้อยแล้ว "
+                        "กรุณารอเรียกเข้าพบแพทย์"
+                    ),
+                )
+
+            # -------------------------------------------------
+            # IN PROGRESS
+            # -------------------------------------------------
+
+            elif status == AppointmentStatusEnum.IN_PROGRESS:
+
+                notification_service.create_notification(
+                    appointment_id=appointment.id,
+                    patient_id=appointment.patient_id,
+                    notification_type=(
+                        NotificationTypeEnum
+                        .READY_FOR_CONSULTATION
+                    ),
+                    title="พร้อมเข้ารับการตรวจ",
+                    body=(
+                        "แพทย์พร้อมให้บริการตรวจแล้ว "
+                        f"กรุณาไปที่ห้องตรวจ {room_number} "
+                        f"{self._format_appointment_datetime(appointment)}"
+                    ),
+                )
+
+            # -------------------------------------------------
+            # NO SHOW
+            # -------------------------------------------------
+
+            elif status == AppointmentStatusEnum.NO_SHOW:
+
+                notification_service.create_notification(
+                    appointment_id=appointment.id,
+                    patient_id=appointment.patient_id,
+                    notification_type=(
+                        NotificationTypeEnum
+                        .APPOINTMENT_CANCELLED
+                    ),
+                    title="ไม่มาตามนัด",
+                    body=(
+                        "ระบบบันทึกว่าคุณไม่มาตามนัดหมาย "
+                        f"{self._format_appointment_datetime(appointment)}"
+                    ),
+                )
+
+            db.commit()
+
+        except Exception:
+            db.rollback()
+
+        finally:
+            db.close()

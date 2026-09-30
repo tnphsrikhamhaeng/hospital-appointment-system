@@ -3,7 +3,6 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { useNavigate } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
 
 import {
@@ -17,8 +16,7 @@ import {
   type StaffUpdateRequest,
 } from "../api/staffApi";
 
-import { logout } from "../../auth/api/authApi";
-import ChangePasswordModal from "../../profile/components/ChangePasswordModal";
+
 
 import "../../doctor/pages/DoctorPage.css";
 
@@ -117,7 +115,6 @@ const staffModalStyle = `
 `;
 
 function CreateStaffPage() {
-  const navigate = useNavigate();
 
   /* =========================
      Staff List
@@ -229,19 +226,6 @@ function CreateStaffPage() {
     setReactivateError,
   ] = useState("");
 
-  /* =========================
-     Logout
-  ========================== */
-  const [isLogoutOpen, setIsLogoutOpen] =
-    useState(false);
-
-  /* =========================
-     Change Password
-  ========================== */
-  const [
-    isChangePasswordOpen,
-    setIsChangePasswordOpen,
-  ] = useState(false);
 
   /* =========================
      Load Staff
@@ -735,26 +719,6 @@ function CreateStaffPage() {
     }
   };
 
-  /* =========================
-     Logout
-  ========================== */
-  const handleOpenLogout = () => {
-    setIsLogoutOpen(true);
-  };
-
-  const handleCloseLogout = () => {
-    setIsLogoutOpen(false);
-  };
-
-  const handleConfirmLogout = () => {
-    logout();
-
-    setIsLogoutOpen(false);
-
-    navigate("/login", {
-      replace: true,
-    });
-  };
 
   /* =========================
      Render
@@ -765,143 +729,7 @@ function CreateStaffPage() {
         {staffModalStyle}
       </style>
 
-      {/* =========================
-          Sidebar
-      ========================== */}
-      <aside className="doctor-sidebar">
-        <div className="sidebar-brand">
-          <img
-            src="/image/logo/LOGO.png"
-            alt="CareFlow"
-            className="sidebar-logo"
-          />
-
-          <div>
-            <strong>
-              CareFlow
-            </strong>
-
-            <span>
-              ระบบบริหารจัดการโรงพยาบาล
-            </span>
-          </div>
-        </div>
-
-        <div className="sidebar-role">
-          <span>
-            ระบบสำหรับเจ้าหน้าที่
-          </span>
-        </div>
-
-        <nav className="sidebar-nav">
-          <button
-            type="button"
-            className="sidebar-nav-item"
-            onClick={() =>
-              navigate("/staff")
-            }
-          >
-            <span className="nav-icon">
-              ▣
-            </span>
-
-            <span>
-              เช็คอินผู้ป่วย
-            </span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-nav-item"
-            onClick={() =>
-              navigate(
-                "/staff/doctors",
-              )
-            }
-          >
-            <span className="nav-icon">
-              ⚕
-            </span>
-
-            <span>
-              จัดการแพทย์
-            </span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-nav-item active"
-            onClick={() =>
-              navigate(
-                "/staff/create",
-              )
-            }
-          >
-            <span className="nav-icon">
-              ♙
-            </span>
-
-            <span>
-              จัดการเจ้าหน้าที่
-            </span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-nav-item"
-            onClick={() =>
-              navigate(
-                "/staff/departments",
-              )
-            }
-          >
-            <span className="nav-icon">
-              ▦
-            </span>
-
-            <span>
-              จัดการแผนก
-            </span>
-          </button>
-        </nav>
-
-        <div className="sidebar-bottom">
-          <button
-            type="button"
-            className="sidebar-bottom-item"
-            onClick={() =>
-              setIsChangePasswordOpen(
-                true,
-              )
-            }
-          >
-            <span className="nav-icon">
-              ⚿
-            </span>
-
-            <span>
-              เปลี่ยนรหัสผ่าน
-            </span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-bottom-item logout-item"
-            onClick={
-              handleOpenLogout
-            }
-          >
-            <span className="nav-icon">
-              ↪
-            </span>
-
-            <span>
-              ออกจากระบบ
-            </span>
-          </button>
-        </div>
-      </aside>
-
+      
       {/* =========================
           Main Content
       ========================== */}
@@ -1936,82 +1764,6 @@ function CreateStaffPage() {
         </div>
       )}
 
-      {/* =========================
-          Logout Modal
-      ========================== */}
-      {isLogoutOpen && (
-        <div
-          className="doctor-modal-overlay"
-          role="presentation"
-          onClick={
-            handleCloseLogout
-          }
-        >
-          <div
-            className="doctor-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="logout-modal-title"
-            onClick={(event) =>
-              event.stopPropagation()
-            }
-            style={{
-              width: "calc(100% - 32px)",
-              maxWidth: "420px",
-            }}
-          >
-            <div className="doctor-modal-icon warning">
-              <AlertTriangle
-                size={20}
-              />
-            </div>
-
-            <h2 id="logout-modal-title">
-              ยืนยันการออกจากระบบ
-            </h2>
-
-            <p>
-              คุณต้องการออกจากระบบใช่หรือไม่?
-            </p>
-
-            <div className="staff-modal-actions">
-              <button
-                type="button"
-                className="action-button danger"
-                onClick={
-                  handleConfirmLogout
-                }
-              >
-                ยืนยันการออกจากระบบ
-              </button>
-
-              <button
-                type="button"
-                className="action-button secondary"
-                onClick={
-                  handleCloseLogout
-                }
-              >
-                ยกเลิก
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =========================
-          Change Password
-      ========================== */}
-      <ChangePasswordModal
-        isOpen={
-          isChangePasswordOpen
-        }
-        onClose={() =>
-          setIsChangePasswordOpen(
-            false,
-          )
-        }
-      />
     </main>
   );
 }

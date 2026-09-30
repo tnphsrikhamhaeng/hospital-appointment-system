@@ -50,13 +50,13 @@ class NotificationLog(Base):
         default=uuid.uuid4,
     )
 
-    appointment_id: Mapped[uuid.UUID] = mapped_column(
+    appointment_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey(
             "appointments.id",
             name="fk_notification_logs_appointment_id",
         ),
-        nullable=False,
+        nullable=True,
     )
 
     patient_id: Mapped[uuid.UUID] = mapped_column(

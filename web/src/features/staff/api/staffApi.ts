@@ -61,7 +61,7 @@ export const updateStaff = async (
   staffId: string,
   data: StaffUpdateRequest,
 ): Promise<StaffResponse> => {
-  const response = await api.put<StaffResponse>(
+  const response = await api.patch<StaffResponse>(
     `/staff/${staffId}`,
     data,
   );

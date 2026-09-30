@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.core.enums import UserRoleEnum
-from app.core.exceptions import ForbiddenException
+from app.core.exceptions import ForbiddenException,Appointmentnotificationsaredisabled,Systemnotificationsaredisabled
 from app.models.user import User
 from app.schemas.notification import NotificationResponse
 from app.services.notification_service import NotificationService
@@ -52,6 +52,21 @@ def get_my_notifications(
         current_user.id,
     )
 
+@router.delete(
+    "",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def clear_my_notifications(
+    current_user: User = Depends(get_current_user),
+    service: NotificationService = Depends(
+        get_notification_service,
+    ),
+):
+    service.clear_patient_notifications(
+        current_user.id,
+    )
+
+    return None
 
 @router.get(
     "/{notification_id}",
@@ -149,6 +164,37 @@ def create_consultation_delayed_notification(
             appointment,
         )
     )
+
+    if notification is None:
+        raise Appointmentnotificationsaredisabled()
+
+    service.db.commit()
+    service.db.refresh(notification)
+
+    return notification
+
+@router.post(
+    "/system",
+    response_model=NotificationResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_system_notification(
+    current_user: User = Depends(get_current_user),
+    service: NotificationService = Depends(
+        get_notification_service,
+    ),
+):
+    notification = service.create_system_notification(
+        patient_id=current_user.id,
+        title="ประกาศจากระบบ",
+        body=(
+            "นี่คือการแจ้งเตือนจากระบบ CareFlow "
+            "สำหรับทดสอบการแจ้งเตือนระบบ"
+        ),
+    )
+
+    if notification is None:
+        raise Systemnotificationsaredisabled()
 
     service.db.commit()
     service.db.refresh(notification)

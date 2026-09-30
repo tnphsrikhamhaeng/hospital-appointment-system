@@ -3,18 +3,11 @@ import '../../data/models/login_response.dart';
 import '../../data/models/register_request.dart';
 import '../../data/repositories/auth_repository.dart';
 
-enum AuthStatus {
-  idle,
-  loading,
-  authenticated,
-  registered,
-  error,
-}
+enum AuthStatus { idle, loading, authenticated, registered, error }
 
 class AuthController {
-  AuthController({
-    required AuthRepository authRepository,
-  }) : _authRepository = authRepository;
+  AuthController({required AuthRepository authRepository})
+    : _authRepository = authRepository;
 
   final AuthRepository _authRepository;
 
@@ -32,10 +25,7 @@ class AuthController {
 
     try {
       final response = await _authRepository.login(
-        LoginRequest(
-          username: username,
-          password: password,
-        ),
+        LoginRequest(username: username, password: password),
       );
 
       _status = AuthStatus.authenticated;

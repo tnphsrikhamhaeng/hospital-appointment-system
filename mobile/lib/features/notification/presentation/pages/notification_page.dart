@@ -67,7 +67,9 @@ class _NotificationPageState extends State<NotificationPage> {
       final patientId = await _getPatientIdFromToken();
 
       if (patientId == null) {
-        throw Exception('ไม่พบข้อมูลผู้ป่วยจากบัญชีที่เข้าสู่ระบบ');
+        throw Exception(
+          'ไม่พบข้อมูลผู้ป่วยจากบัญชีที่เข้าสู่ระบบ',
+        );
       }
 
       final notifications = await _notificationRepository
@@ -97,7 +99,9 @@ class _NotificationPageState extends State<NotificationPage> {
 
       setState(() {
         _isLoading = false;
-        _errorMessage = error.toString().replaceFirst('Exception: ', '');
+        _errorMessage = error
+            .toString()
+            .replaceFirst('Exception: ', '');
       });
     }
   }
@@ -130,10 +134,14 @@ class _NotificationPageState extends State<NotificationPage> {
     }
   }
 
-  Map<String, dynamic> _decodeJwtPayload(String encodedPayload) {
+  Map<String, dynamic> _decodeJwtPayload(
+    String encodedPayload,
+  ) {
     final normalized = base64Url.normalize(encodedPayload);
 
-    final decoded = utf8.decode(base64Url.decode(normalized));
+    final decoded = utf8.decode(
+      base64Url.decode(normalized),
+    );
 
     final payload = jsonDecode(decoded);
 
@@ -148,18 +156,33 @@ class _NotificationPageState extends State<NotificationPage> {
     switch (_selectedFilter) {
       case 'นัดหมาย':
         return _notifications
-            .where((notification) => _isAppointmentNotification(notification))
+            .where(_isAppointmentNotification)
+            .toList();
+
+      case 'ผลการรักษา':
+        return _notifications
+            .where(_isMedicalRecordNotification)
+            .toList();
+
+      case 'ระบบ':
+        return _notifications
+            .where(_isSystemNotification)
             .toList();
 
       case 'ทั้งหมด':
       default:
-        return List<NotificationModel>.from(_notifications);
+        return List<NotificationModel>.from(
+          _notifications,
+        );
     }
   }
 
-  bool _isAppointmentNotification(NotificationModel notification) {
+  bool _isAppointmentNotification(
+    NotificationModel notification,
+  ) {
     switch (notification.type) {
       case NotificationType.appointmentConfirmed:
+      case NotificationType.appointmentCheckedIn:
       case NotificationType.reminder3Days:
       case NotificationType.reminder1Day:
       case NotificationType.reminder30Minutes:
@@ -168,7 +191,25 @@ class _NotificationPageState extends State<NotificationPage> {
       case NotificationType.appointmentCancelled:
       case NotificationType.appointmentRescheduled:
         return true;
+
+      case NotificationType.medicalRecordCreated:
+      case NotificationType.systemAnnouncement:
+        return false;
     }
+  }
+
+  bool _isMedicalRecordNotification(
+    NotificationModel notification,
+  ) {
+    return notification.type ==
+        NotificationType.medicalRecordCreated;
+  }
+
+  bool _isSystemNotification(
+    NotificationModel notification,
+  ) {
+    return notification.type ==
+        NotificationType.systemAnnouncement;
   }
 
   @override
@@ -195,7 +236,10 @@ class _NotificationPageState extends State<NotificationPage> {
           onPressed: () {
             Navigator.of(context).pop();
           },
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 20,
+          ),
           color: AppTheme.textPrimaryColor,
         ),
         title: const Text(
@@ -207,6 +251,21 @@ class _NotificationPageState extends State<NotificationPage> {
             color: AppTheme.textPrimaryColor,
           ),
         ),
+        actions: [
+          if (_notifications.isNotEmpty)
+            TextButton(
+              onPressed: _clearAllNotifications,
+              child: const Text(
+                'เคลียร์',
+                style: TextStyle(
+                  fontFamily: 'Kanit',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -214,32 +273,50 @@ class _NotificationPageState extends State<NotificationPage> {
             _buildFilterSection(),
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Center(
+                      child: CircularProgressIndicator(),
+                    )
                   : _errorMessage != null
                   ? _buildErrorState()
                   : notifications.isEmpty
                   ? _buildEmptyState()
                   : ScrollConfiguration(
-                      behavior: const _NoStretchScrollBehavior(),
+                      behavior:
+                          const _NoStretchScrollBehavior(),
                       child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(18, 12, 18, 32),
+                        padding: const EdgeInsets.fromLTRB(
+                          18,
+                          12,
+                          18,
+                          32,
+                        ),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
                           children: [
                             if (todayNotifications.isNotEmpty) ...[
                               _buildSectionTitle('วันนี้'),
                               const SizedBox(height: 10),
-                              for (final notification in todayNotifications)
-                                _buildNotificationCard(notification),
+                              for (final notification
+                                  in todayNotifications)
+                                _buildNotificationCard(
+                                  notification,
+                                ),
                             ],
                             if (todayNotifications.isNotEmpty &&
-                                previousNotifications.isNotEmpty)
+                                previousNotifications
+                                    .isNotEmpty)
                               const SizedBox(height: 8),
                             if (previousNotifications.isNotEmpty) ...[
-                              _buildSectionTitle('ก่อนหน้านี้'),
+                              _buildSectionTitle(
+                                'ก่อนหน้านี้',
+                              ),
                               const SizedBox(height: 10),
-                              for (final notification in previousNotifications)
-                                _buildNotificationCard(notification),
+                              for (final notification
+                                  in previousNotifications)
+                                _buildNotificationCard(
+                                  notification,
+                                ),
                             ],
                           ],
                         ),
@@ -253,12 +330,22 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   Widget _buildFilterSection() {
-    const filters = ['ทั้งหมด', 'นัดหมาย'];
+    const filters = [
+      'ทั้งหมด',
+      'นัดหมาย',
+      'ผลการรักษา',
+      'ระบบ',
+    ];
 
     return Container(
       width: double.infinity,
       color: AppTheme.surfaceColor,
-      padding: const EdgeInsets.fromLTRB(18, 4, 18, 14),
+      padding: const EdgeInsets.fromLTRB(
+        18,
+        4,
+        18,
+        14,
+      ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -315,12 +402,200 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
-  Widget _buildNotificationCard(NotificationModel notification) {
-    final iconData = _getNotificationIcon(notification.type);
+  Future<void> _clearAllNotifications() async {
+    if (_notifications.isEmpty) {
+      return;
+    }
 
-    final iconColor = _getNotificationIconColor(notification.type);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 40,
+          ),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(
+              22,
+              24,
+              22,
+              18,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F8FC),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 58,
+                  height: 58,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFFE8E8),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.notifications_off_rounded,
+                    size: 28,
+                    color: Color(0xFFE56B6B),
+                  ),
+                ),
+                const SizedBox(height: 17),
+                const Text(
+                  'เคลียร์การแจ้งเตือน',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Kanit',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimaryColor,
+                  ),
+                ),
+                const SizedBox(height: 7),
+                const Text(
+                  'คุณต้องการเคลียร์การแจ้งเตือนทั้งหมดหรือไม่',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Kanit',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    height: 1.45,
+                    color: AppTheme.textSecondaryColor,
+                  ),
+                ),
+                const SizedBox(height: 22),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 46,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.of(
+                              dialogContext,
+                            ).pop(false);
+                          },
+                          style: OutlinedButton.styleFrom(
+                            elevation: 0,
+                            backgroundColor: Colors.transparent,
+                            foregroundColor:
+                                AppTheme.textSecondaryColor,
+                            side: const BorderSide(
+                              color: Color(0xFFE1E3E8),
+                              width: 1,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(23),
+                            ),
+                          ),
+                          child: const Text(
+                            'ยกเลิก',
+                            style: TextStyle(
+                              fontFamily: 'Kanit',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: SizedBox(
+                        height: 46,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(
+                              dialogContext,
+                            ).pop(true);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            elevation: 0,
+                            backgroundColor:
+                                AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(23),
+                            ),
+                          ),
+                          child: const Text(
+                            'เคลียร์',
+                            style: TextStyle(
+                              fontFamily: 'Kanit',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
 
-    final iconBackground = _getNotificationIconBackground(notification.type);
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    try {
+      await _notificationRepository.clearAllNotifications();
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _notifications = [];
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'เคลียร์การแจ้งเตือนทั้งหมดแล้ว',
+            style: TextStyle(fontFamily: 'Kanit'),
+          ),
+        ),
+      );
+    } on DioException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _getDioErrorMessage(error),
+            style: const TextStyle(fontFamily: 'Kanit'),
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildNotificationCard(
+    NotificationModel notification,
+  ) {
+    final iconData =
+        _getNotificationIcon(notification.type);
+
+    final iconColor =
+        _getNotificationIconColor(notification.type);
+
+    final iconBackground =
+        _getNotificationIconBackground(notification.type);
 
     return GestureDetector(
       onTap: () async {
@@ -335,14 +610,22 @@ class _NotificationPageState extends State<NotificationPage> {
       child: Container(
         width: double.infinity,
         margin: const EdgeInsets.only(bottom: 11),
-        padding: const EdgeInsets.fromLTRB(13, 14, 14, 14),
+        padding: const EdgeInsets.fromLTRB(
+          13,
+          14,
+          14,
+          14,
+        ),
         decoration: BoxDecoration(
           color: AppTheme.surfaceColor,
           borderRadius: BorderRadius.circular(16),
           border: notification.isRead
               ? null
-              : Border(
-                  left: BorderSide(color: AppTheme.primaryColor, width: 3),
+              : const Border(
+                  left: BorderSide(
+                    color: AppTheme.primaryColor,
+                    width: 3,
+                  ),
                 ),
           boxShadow: [
             BoxShadow(
@@ -362,15 +645,21 @@ class _NotificationPageState extends State<NotificationPage> {
                 color: iconBackground,
                 shape: BoxShape.circle,
               ),
-              child: Icon(iconData, size: 21, color: iconColor),
+              child: Icon(
+                iconData,
+                size: 21,
+                color: iconColor,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: Text(
@@ -383,18 +672,22 @@ class _NotificationPageState extends State<NotificationPage> {
                             fontWeight: notification.isRead
                                 ? FontWeight.w500
                                 : FontWeight.w600,
-                            color: AppTheme.textPrimaryColor,
+                            color:
+                                AppTheme.textPrimaryColor,
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        _formatRelativeTime(notification.createdAt),
+                        _formatRelativeTime(
+                          notification.createdAt,
+                        ),
                         style: const TextStyle(
                           fontFamily: 'Kanit',
                           fontSize: 10,
                           fontWeight: FontWeight.w400,
-                          color: AppTheme.textSecondaryColor,
+                          color:
+                              AppTheme.textSecondaryColor,
                         ),
                       ),
                     ],
@@ -421,13 +714,16 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
-  Future<void> _markAsRead(NotificationModel notification) async {
+  Future<void> _markAsRead(
+    NotificationModel notification,
+  ) async {
     if (notification.isRead) {
       return;
     }
 
     try {
-      final updated = await _notificationRepository.markNotificationAsRead(
+      final updated = await _notificationRepository
+          .markNotificationAsRead(
         notificationId: notification.id,
       );
 
@@ -450,21 +746,33 @@ class _NotificationPageState extends State<NotificationPage> {
     }
   }
 
-  Future<void> _showNotificationDialog(NotificationModel notification) async {
-    final iconData = _getNotificationIcon(notification.type);
+  Future<void> _showNotificationDialog(
+    NotificationModel notification,
+  ) async {
+    final iconData =
+        _getNotificationIcon(notification.type);
 
-    final iconColor = _getNotificationIconColor(notification.type);
+    final iconColor =
+        _getNotificationIconColor(notification.type);
 
-    final iconBackground = _getNotificationIconBackground(notification.type);
+    final iconBackground =
+        _getNotificationIconBackground(notification.type);
 
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
         return Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 40),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 40,
+          ),
           child: Container(
-            padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+            padding: const EdgeInsets.fromLTRB(
+              20,
+              22,
+              20,
+              18,
+            ),
             decoration: BoxDecoration(
               color: const Color(0xFFF8F8FC),
               borderRadius: BorderRadius.circular(24),
@@ -479,11 +787,13 @@ class _NotificationPageState extends State<NotificationPage> {
                     color: iconBackground,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(iconData, size: 29, color: iconColor),
+                  child: Icon(
+                    iconData,
+                    size: 29,
+                    color: iconColor,
+                  ),
                 ),
-
                 const SizedBox(height: 17),
-
                 Text(
                   notification.title,
                   textAlign: TextAlign.center,
@@ -494,13 +804,11 @@ class _NotificationPageState extends State<NotificationPage> {
                     color: AppTheme.textPrimaryColor,
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
-                _buildDialogNotificationBody(notification.body),
-
+                _buildDialogNotificationBody(
+                  notification.body,
+                ),
                 const SizedBox(height: 8),
-
                 Text(
                   _formatDateTime(notification.createdAt),
                   style: const TextStyle(
@@ -509,9 +817,7 @@ class _NotificationPageState extends State<NotificationPage> {
                     color: AppTheme.textSecondaryColor,
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
                 SizedBox(
                   width: double.infinity,
                   height: 44,
@@ -521,10 +827,12 @@ class _NotificationPageState extends State<NotificationPage> {
                     },
                     style: ElevatedButton.styleFrom(
                       elevation: 0,
-                      backgroundColor: AppTheme.primaryColor,
+                      backgroundColor:
+                          AppTheme.primaryColor,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(22),
+                        borderRadius:
+                            BorderRadius.circular(22),
                       ),
                     ),
                     child: const Text(
@@ -546,7 +854,9 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
-  Widget _buildDialogNotificationBody(String body) {
+  Widget _buildDialogNotificationBody(
+    String body,
+  ) {
     final dateIndex = body.indexOf('วันที่');
 
     if (dateIndex == -1) {
@@ -565,7 +875,8 @@ class _NotificationPageState extends State<NotificationPage> {
 
     final message = body.substring(0, dateIndex).trim();
 
-    final appointmentDateTime = body.substring(dateIndex).trim();
+    final appointmentDateTime =
+        body.substring(dateIndex).trim();
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -642,7 +953,9 @@ class _NotificationPageState extends State<NotificationPage> {
   Widget _buildErrorState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 32,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -677,7 +990,9 @@ class _NotificationPageState extends State<NotificationPage> {
               onPressed: _loadNotifications,
               child: const Text(
                 'ลองใหม่',
-                style: TextStyle(fontFamily: 'Kanit'),
+                style: TextStyle(
+                  fontFamily: 'Kanit',
+                ),
               ),
             ),
           ],
@@ -724,21 +1039,28 @@ class _NotificationPageState extends State<NotificationPage> {
   String _formatDateTime(DateTime date) {
     final day = date.day.toString().padLeft(2, '0');
 
-    final month = date.month.toString().padLeft(2, '0');
+    final month =
+        date.month.toString().padLeft(2, '0');
 
     final year = date.year + 543;
 
     final hour = date.hour.toString().padLeft(2, '0');
 
-    final minute = date.minute.toString().padLeft(2, '0');
+    final minute =
+        date.minute.toString().padLeft(2, '0');
 
     return '$day/$month/$year $hour:$minute น.';
   }
 
-  IconData _getNotificationIcon(NotificationType type) {
+  IconData _getNotificationIcon(
+    NotificationType type,
+  ) {
     switch (type) {
       case NotificationType.appointmentConfirmed:
         return Icons.calendar_month_rounded;
+
+      case NotificationType.appointmentCheckedIn:
+        return Icons.check_circle_rounded;
 
       case NotificationType.appointmentCancelled:
         return Icons.event_busy_rounded;
@@ -756,17 +1078,32 @@ class _NotificationPageState extends State<NotificationPage> {
 
       case NotificationType.appointmentRescheduled:
         return Icons.event_repeat_rounded;
+
+      case NotificationType.medicalRecordCreated:
+        return Icons.description_rounded;
+
+      case NotificationType.systemAnnouncement:
+        return Icons.notifications_rounded;
     }
   }
 
-  Color _getNotificationIconColor(NotificationType type) {
+  Color _getNotificationIconColor(
+    NotificationType type,
+  ) {
     switch (type) {
       case NotificationType.appointmentCancelled:
       case NotificationType.consultationDelayed:
         return const Color(0xFFE08A27);
 
       case NotificationType.readyForConsultation:
+      case NotificationType.appointmentCheckedIn:
         return const Color(0xFF35A85A);
+
+      case NotificationType.medicalRecordCreated:
+        return const Color(0xFF7B61C8);
+
+      case NotificationType.systemAnnouncement:
+        return const Color(0xFF4B7BEC);
 
       case NotificationType.appointmentConfirmed:
       case NotificationType.reminder3Days:
@@ -777,14 +1114,23 @@ class _NotificationPageState extends State<NotificationPage> {
     }
   }
 
-  Color _getNotificationIconBackground(NotificationType type) {
+  Color _getNotificationIconBackground(
+    NotificationType type,
+  ) {
     switch (type) {
       case NotificationType.appointmentCancelled:
       case NotificationType.consultationDelayed:
         return const Color(0xFFFFEBD6);
 
       case NotificationType.readyForConsultation:
+      case NotificationType.appointmentCheckedIn:
         return const Color(0xFFE4F8E9);
+
+      case NotificationType.medicalRecordCreated:
+        return const Color(0xFFF0EAFE);
+
+      case NotificationType.systemAnnouncement:
+        return const Color(0xFFE8EEFF);
 
       case NotificationType.appointmentConfirmed:
       case NotificationType.reminder3Days:

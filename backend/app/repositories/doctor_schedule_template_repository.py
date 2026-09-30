@@ -117,7 +117,13 @@ class DoctorScheduleTemplateRepository:
         weekday: WeekdayEnum,
         start_time: time,
     ) -> DoctorScheduleTemplate | None:
+        weekdays = list(WeekdayEnum)
+        current_index = weekdays.index(weekday)
+        previous_weekday = weekdays[
+            (current_index - 1) % len(weekdays)
+        ]
 
+        # 1. ตารางปกติของวันนั้น
         statement = (
             select(DoctorScheduleTemplate)
             .where(
@@ -126,6 +132,24 @@ class DoctorScheduleTemplateRepository:
                 DoctorScheduleTemplate.is_active.is_(True),
                 DoctorScheduleTemplate.start_time <= start_time,
                 DoctorScheduleTemplate.end_time > start_time,
+            )
+        )
+
+        schedule = self.db.scalar(statement)
+
+        if schedule is not None:
+            return schedule
+
+        # 2. ตารางของวันก่อนหน้าที่ลากข้ามมาวันนี้
+        statement = (
+            select(DoctorScheduleTemplate)
+            .where(
+                DoctorScheduleTemplate.doctor_id == doctor_id,
+                DoctorScheduleTemplate.weekday == previous_weekday,
+                DoctorScheduleTemplate.is_active.is_(True),
+                DoctorScheduleTemplate.start_time
+                > DoctorScheduleTemplate.end_time,
+                start_time < DoctorScheduleTemplate.end_time,
             )
         )
 

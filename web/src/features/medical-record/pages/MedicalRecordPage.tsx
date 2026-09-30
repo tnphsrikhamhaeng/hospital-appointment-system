@@ -4,8 +4,6 @@ import {
   createMedicalRecord,
   type MedicalRecordCreateRequest,
 } from "../api/medicalRecordApi";
-import { logout } from "../../auth/api/authApi";
-import ChangePasswordModal from "../../profile/components/ChangePasswordModal";
 import "../../doctor/pages/DoctorPage.css";
 import "./MedicalRecordPage.css";
 
@@ -43,12 +41,6 @@ function MedicalRecordPage() {
 
   const [successMessage, setSuccessMessage] =
     useState("");
-
-  const [isLogoutOpen, setIsLogoutOpen] =
-    useState(false);
-
-  const [isChangePasswordOpen, setIsChangePasswordOpen] =
-    useState(false);
 
   const handleChange = (
     field: keyof Omit<
@@ -160,191 +152,9 @@ function MedicalRecordPage() {
     }
   };
 
-  const handleOpenLogout = () => {
-    setIsLogoutOpen(true);
-  };
-
-  const handleCloseLogout = () => {
-    setIsLogoutOpen(false);
-  };
-
-  const handleConfirmLogout = () => {
-    logout();
-    setIsLogoutOpen(false);
-    navigate("/login", {
-      replace: true,
-    });
-  };
-
-  const handleOpenChangePassword = () => {
-    setIsChangePasswordOpen(true);
-  };
-
-  const handleCloseChangePassword = () => {
-    setIsChangePasswordOpen(false);
-  };
-
-  const renderSidebar = () => (
-    <aside className="doctor-sidebar">
-      <div className="sidebar-brand">
-        <img
-          src="/image/logo/LOGO.png"
-          alt="CareFlow"
-          className="sidebar-logo"
-        />
-
-        <div>
-          <strong>CareFlow</strong>
-
-          <span>
-            ระบบบริหารจัดการโรงพยาบาล
-          </span>
-        </div>
-      </div>
-
-      <div className="sidebar-role">
-        <span>ระบบสำหรับแพทย์</span>
-      </div>
-
-      <nav className="sidebar-nav">
-        <button
-          type="button"
-          className="sidebar-nav-item active"
-          onClick={() =>
-            navigate("/doctor")
-          }
-        >
-          <span className="nav-icon">
-            ⌂
-          </span>
-
-          <span>หน้าหลัก</span>
-        </button>
-
-        <button
-          type="button"
-          className="sidebar-nav-item"
-          onClick={() =>
-            navigate("/doctor/history")
-          }
-        >
-          <span className="nav-icon">
-            ▤
-          </span>
-
-          <span>ประวัติการรักษา</span>
-        </button>
-
-        <button
-          type="button"
-          className="sidebar-nav-item"
-          onClick={() =>
-            navigate("/doctor/schedule")
-          }
-        >
-          <span className="nav-icon">
-            ▦
-          </span>
-
-          <span>ตารางนัดหมาย</span>
-        </button>
-      </nav>
-
-      <div className="sidebar-bottom">
-        <button
-          type="button"
-          className="sidebar-bottom-item"
-          onClick={
-            handleOpenChangePassword
-          }
-        >
-          <span className="nav-icon">
-            ⚿
-          </span>
-
-          <span>เปลี่ยนรหัสผ่าน</span>
-        </button>
-
-        <button
-          type="button"
-          className="sidebar-bottom-item logout-item"
-          onClick={handleOpenLogout}
-        >
-          <span className="nav-icon">
-            ↪
-          </span>
-
-          <span>ออกจากระบบ</span>
-        </button>
-      </div>
-    </aside>
-  );
 
   return (
-    <main className="doctor-page">
-      {renderSidebar()}
-
-      {/* =========================
-          Logout Confirmation Modal
-      ========================== */}
-      {isLogoutOpen && (
-        <div
-          className="doctor-modal-overlay"
-          role="presentation"
-          onClick={handleCloseLogout}
-        >
-          <div
-            className="doctor-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="logout-modal-title"
-            onClick={(event) =>
-              event.stopPropagation()
-            }
-          >
-            <div className="doctor-modal-icon warning">
-              ↪
-            </div>
-
-            <h2 id="logout-modal-title">
-              ยืนยันการออกจากระบบ
-            </h2>
-
-            <p>
-              คุณต้องการออกจากระบบใช่หรือไม่?
-            </p>
-
-            <div className="doctor-modal-actions">
-              <button
-                type="button"
-                className="action-button secondary"
-                onClick={handleCloseLogout}
-              >
-                ยกเลิก
-              </button>
-
-              <button
-                type="button"
-                className="action-button danger"
-                onClick={handleConfirmLogout}
-              >
-                ยืนยัน
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =========================
-          Change Password Modal
-      ========================== */}
-      <ChangePasswordModal
-        isOpen={isChangePasswordOpen}
-        onClose={
-          handleCloseChangePassword
-        }
-      />
-
+    <>
       <section className="doctor-content">
         <header className="doctor-header">
           <div>
@@ -630,7 +440,7 @@ function MedicalRecordPage() {
           </div>
         )}
       </section>
-    </main>
+    </>
   );
 }
 

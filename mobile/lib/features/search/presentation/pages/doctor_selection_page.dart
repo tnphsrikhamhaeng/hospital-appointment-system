@@ -117,24 +117,34 @@ class _DoctorSelectionPageState extends State<DoctorSelectionPage> {
   }
 
   String? _resolveImageUrl(String? imageUrl) {
-    final trimmedUrl = imageUrl?.trim();
+  final trimmedUrl = imageUrl?.trim();
 
-    if (trimmedUrl == null || trimmedUrl.isEmpty) {
-      return null;
-    }
+  if (trimmedUrl == null || trimmedUrl.isEmpty) {
+    return null;
+  }
 
-    final uri = Uri.tryParse(trimmedUrl);
+  final uri = Uri.tryParse(trimmedUrl);
 
-    if (uri == null) {
-      return trimmedUrl;
-    }
-
-    if (uri.host == 'localhost' || uri.host == '127.0.0.1') {
-      return uri.replace(host: '10.0.2.2').toString();
-    }
-
+  if (uri == null) {
     return trimmedUrl;
   }
+
+  final baseUri = Uri.parse(ApiClient.baseUrl);
+
+  if (uri.host == 'localhost' ||
+      uri.host == '127.0.0.1' ||
+      uri.host == '10.0.2.2') {
+    return uri
+        .replace(
+          scheme: baseUri.scheme,
+          host: baseUri.host,
+          port: baseUri.hasPort ? baseUri.port : null,
+        )
+        .toString();
+  }
+
+  return trimmedUrl;
+}
 
   String? _resolveDepartmentImageUrl() {
     return _resolveImageUrl(widget.departmentImageUrl);

@@ -191,7 +191,7 @@ class _HomePageState extends State<HomePage> {
       final doctor = await _doctorRepository.getDoctorById(
         doctorId: upcoming.doctorId,
       );
-    
+
       if (!mounted) {
         return;
       }
@@ -338,8 +338,18 @@ class _HomePageState extends State<HomePage> {
       return trimmedUrl;
     }
 
-    if (uri.host == 'localhost' || uri.host == '127.0.0.1') {
-      return uri.replace(host: '10.0.2.2').toString();
+    final baseUri = Uri.parse(ApiClient.baseUrl);
+
+    if (uri.host == 'localhost' ||
+        uri.host == '127.0.0.1' ||
+        uri.host == '10.0.2.2') {
+      return uri
+          .replace(
+            scheme: baseUri.scheme,
+            host: baseUri.host,
+            port: baseUri.hasPort ? baseUri.port : null,
+          )
+          .toString();
     }
 
     return trimmedUrl;
@@ -557,7 +567,7 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(width: 11),
               Expanded(
                 child: Text(
-                  'ค้นหาอาการ หรือแพทย์',
+                  'ค้นหาอาการ หรือแผนก',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: _isSearchPressed
                         ? AppTheme.primaryDarkColor
@@ -809,10 +819,7 @@ class _HomePageState extends State<HomePage> {
           decoration: BoxDecoration(
             color: AppTheme.primaryBackgroundColor,
             shape: BoxShape.circle,
-            border: Border.all(
-              color: const Color(0xFFDDE8F7),
-              width: 2,
-            ),
+            border: Border.all(color: const Color(0xFFDDE8F7), width: 2),
           ),
           clipBehavior: Clip.antiAlias,
           child: imageUrl == null
@@ -824,11 +831,7 @@ class _HomePageState extends State<HomePage> {
               : Image.network(
                   imageUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (
-                    context,
-                    error,
-                    stackTrace,
-                  ) {
+                  errorBuilder: (context, error, stackTrace) {
                     return const Icon(
                       Icons.person_rounded,
                       color: AppTheme.primaryColor,
@@ -921,8 +924,10 @@ class _HomePageState extends State<HomePage> {
       case AppointmentStatus.noShow:
         return AppTheme.errorColor;
       case AppointmentStatus.confirmed:
-      case AppointmentStatus.checkedIn:
         return AppTheme.successColor;
+
+      case AppointmentStatus.checkedIn:
+        return AppTheme.checkInColor;
       case AppointmentStatus.inProgress:
       case AppointmentStatus.completed:
         return AppTheme.primaryColor;
@@ -1085,10 +1090,7 @@ class _AppointmentError extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
 
-  const _AppointmentError({
-    required this.message,
-    required this.onRetry,
-  });
+  const _AppointmentError({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -1098,9 +1100,7 @@ class _AppointmentError extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.errorColor.withValues(alpha: 0.20),
-        ),
+        border: Border.all(color: AppTheme.errorColor.withValues(alpha: 0.20)),
       ),
       child: Column(
         children: [
@@ -1122,10 +1122,7 @@ class _AppointmentError extends StatelessWidget {
           const SizedBox(height: 12),
           OutlinedButton(
             onPressed: onRetry,
-            child: const Text(
-              'ลองใหม่',
-              style: TextStyle(fontFamily: 'Kanit'),
-            ),
+            child: const Text('ลองใหม่', style: TextStyle(fontFamily: 'Kanit')),
           ),
         ],
       ),
@@ -1140,10 +1137,7 @@ class _EmptyUpcomingAppointment extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        vertical: 38,
-        horizontal: 20,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 38, horizontal: 20),
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
         borderRadius: BorderRadius.circular(18),

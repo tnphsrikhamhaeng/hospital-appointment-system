@@ -9,6 +9,7 @@ import '../../data/services/auth_api_service.dart';
 import '../controllers/auth_controller.dart';
 import 'register_page.dart';
 import 'forgot_password_page.dart';
+import '../../../../core/notification/onesignal_service.dart';
 
 class _NoStretchScrollBehavior extends ScrollBehavior {
   const _NoStretchScrollBehavior();
@@ -108,6 +109,12 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     if (response != null) {
+      await OneSignalService.identifyCurrentUser();
+
+      if (!mounted) {
+        return;
+      }
+
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const AppShell()),
         (route) => false,

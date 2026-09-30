@@ -6,7 +6,6 @@ from app.models.specialization import Specialization
 from app.models.doctor_schedule_template import DoctorScheduleTemplate
 from app.models.appointment import Appointment
 from .appointment_qr_code import AppointmentQRCode
-from app.models.user_device import UserDevice
 from app.models.notification_log import NotificationLog
 from app.models.notification_setting import NotificationSetting
 from app.models.medical_record import MedicalRecord

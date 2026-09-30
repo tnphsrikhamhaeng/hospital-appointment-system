@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Select, and_, select
@@ -74,6 +74,8 @@ class AppointmentRepository:
         doctor_id: uuid.UUID,
         appointment_date: date,
     ) -> list[Appointment]:
+        previous_date = appointment_date - timedelta(days=1)
+
         stmt: Select = (
             select(Appointment)
             .options(
@@ -81,12 +83,34 @@ class AppointmentRepository:
             )
             .where(
                 Appointment.doctor_id == doctor_id,
-                Appointment.appointment_date == appointment_date,
+                Appointment.appointment_date.in_(
+                    [previous_date, appointment_date]
+                ),
             )
-            .order_by(Appointment.start_time.asc())
+            .order_by(
+                Appointment.appointment_date.asc(),
+                Appointment.start_time.asc(),
+            )
         )
 
-        return list(self.db.scalars(stmt).all())
+        appointments = list(self.db.scalars(stmt).all())
+
+        result: list[Appointment] = []
+
+        for appointment in appointments:
+            # นัดหมายปกติของวันที่เลือก
+            if appointment.appointment_date == appointment_date:
+                result.append(appointment)
+                continue
+
+            # นัดหมายของวันก่อนหน้าที่ข้ามมาในวันปัจจุบัน
+            if (
+                appointment.end_time <= appointment.start_time
+                and appointment_date == previous_date + timedelta(days=1)
+            ):
+                result.append(appointment)
+
+        return result
 
     def get_by_doctor_date_time(
         self,
@@ -186,13 +210,7 @@ class AppointmentRepository:
     ) -> bool:
         conditions = [
             Appointment.doctor_id == doctor_id,
-            Appointment.appointment_date == appointment_date,
-
-            # ยกเลิกแล้วไม่ถือว่าเป็นการจองที่ทับซ้อน
             Appointment.status != "cancelled",
-
-            Appointment.start_time < end_time,
-            Appointment.end_time > start_time,
         ]
 
         if exclude_appointment_id is not None:
@@ -200,11 +218,55 @@ class AppointmentRepository:
                 Appointment.id != exclude_appointment_id
             )
 
-        statement = select(Appointment.id).where(
-            and_(*conditions)
+        appointments = self.db.scalars(
+            select(Appointment).where(
+                and_(*conditions)
+            )
+        ).all()
+
+        new_start = datetime.combine(
+            appointment_date,
+            start_time,
         )
 
-        return self.db.scalar(statement) is not None
+        new_end = datetime.combine(
+            appointment_date,
+            end_time,
+        )
+
+        if end_time <= start_time:
+            new_end = new_end.replace(
+                day=new_end.day
+            )
+            new_end = new_end.replace(
+                hour=end_time.hour,
+                minute=end_time.minute,
+                second=end_time.second,
+                microsecond=end_time.microsecond,
+            )
+
+            from datetime import timedelta
+            new_end += timedelta(days=1)
+
+        for appointment in appointments:
+            existing_start = datetime.combine(
+                appointment.appointment_date,
+                appointment.start_time,
+            )
+
+            existing_end = datetime.combine(
+                appointment.appointment_date,
+                appointment.end_time,
+            )
+
+            if appointment.end_time <= appointment.start_time:
+                from datetime import timedelta
+                existing_end += timedelta(days=1)
+
+            if existing_start < new_end and existing_end > new_start:
+                return True
+
+        return False
 
     def exists_overlapping_patient_appointment(
         self,
@@ -216,13 +278,7 @@ class AppointmentRepository:
     ) -> bool:
         conditions = [
             Appointment.patient_id == patient_id,
-            Appointment.appointment_date == appointment_date,
-
-            # ยกเลิกแล้วไม่ถือว่าเป็นการจองที่ทับซ้อน
             Appointment.status != "cancelled",
-
-            Appointment.start_time < end_time,
-            Appointment.end_time > start_time,
         ]
 
         if exclude_appointment_id is not None:
@@ -230,11 +286,43 @@ class AppointmentRepository:
                 Appointment.id != exclude_appointment_id
             )
 
-        statement = select(Appointment.id).where(
-            and_(*conditions)
+        appointments = self.db.scalars(
+            select(Appointment).where(
+                and_(*conditions)
+            )
+        ).all()
+
+        new_start = datetime.combine(
+            appointment_date,
+            start_time,
         )
 
-        return self.db.scalar(statement) is not None
+        new_end = datetime.combine(
+            appointment_date,
+            end_time,
+        )
+
+        if end_time <= start_time:
+            new_end += timedelta(days=1)
+
+        for appointment in appointments:
+            existing_start = datetime.combine(
+                appointment.appointment_date,
+                appointment.start_time,
+            )
+
+            existing_end = datetime.combine(
+                appointment.appointment_date,
+                appointment.end_time,
+            )
+
+            if appointment.end_time <= appointment.start_time:
+                existing_end += timedelta(days=1)
+
+            if existing_start < new_end and existing_end > new_start:
+                return True
+
+        return False
 
     def get_confirmed_appointments_between(
         self,

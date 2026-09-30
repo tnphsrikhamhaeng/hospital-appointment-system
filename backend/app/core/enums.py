@@ -56,13 +56,19 @@ class WeekdayEnum(str, Enum):
     
 class NotificationTypeEnum(str, Enum):
     APPOINTMENT_CONFIRMED = "appointment_confirmed"
+    APPOINTMENT_CHECKED_IN = "appointment_checked_in"
+
     REMINDER_3_DAYS = "reminder_3_days"
     REMINDER_1_DAY = "reminder_1_day"
     REMINDER_30_MINUTES = "reminder_30_minutes"
+
     READY_FOR_CONSULTATION = "ready_for_consultation"
     CONSULTATION_DELAYED = "consultation_delayed"
     APPOINTMENT_CANCELLED = "appointment_cancelled"
     APPOINTMENT_RESCHEDULED = "appointment_rescheduled"
+
+    MEDICAL_RECORD_CREATED = "medical_record_created"
+    SYSTEM_ANNOUNCEMENT = "system_announcement"
     
 class NotificationStatusEnum(str, Enum):
     SENT = "sent"

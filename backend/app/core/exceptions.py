@@ -220,3 +220,15 @@ class MedicalRecordAppointmentNotCheckedInException(HTTPException):
             status_code=status.HTTP_409_CONFLICT,
             detail="Medical record can only be created after the appointment is checked in.",
         )
+
+class Appointmentnotificationsaredisabled( HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code = status.HTTP_409_CONFLICT, 
+            detail = 'Appointment notifications are disabled.')
+        
+class Systemnotificationsaredisabled( HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code = status.HTTP_409_CONFLICT, 
+            detail = 'System notifications are disabled.')

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../search/data/models/doctor_model.dart';
 import '../../data/models/appointment_model.dart';
 import 'appointment_details_page.dart';
@@ -37,16 +38,14 @@ class _AppointmentBookingSuccessPageState
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
 
-    _successScaleAnimation =
-        Tween<double>(begin: 0.92, end: 1.08).animate(
+    _successScaleAnimation = Tween<double>(begin: 0.92, end: 1.08).animate(
       CurvedAnimation(
         parent: _successAnimationController,
         curve: Curves.easeInOut,
       ),
     );
 
-    _successMoveAnimation =
-        Tween<double>(begin: 2.0, end: -2.0).animate(
+    _successMoveAnimation = Tween<double>(begin: 2.0, end: -2.0).animate(
       CurvedAnimation(
         parent: _successAnimationController,
         curve: Curves.easeInOut,
@@ -61,10 +60,9 @@ class _AppointmentBookingSuccessPageState
   }
 
   String _doctorName() {
-    final title =
-        widget.doctor.preface == DoctorPreface.mrDoctor
-            ? 'นายแพทย์'
-            : 'แพทย์หญิง';
+    final title = widget.doctor.preface == DoctorPreface.mrDoctor
+        ? 'นายแพทย์'
+        : 'แพทย์หญิง';
 
     return '$title '
         '${widget.doctor.firstName} '
@@ -79,9 +77,7 @@ class _AppointmentBookingSuccessPageState
     return widget.doctor.specializations.first.name;
   }
 
-  String? _resolveDoctorImageUrl(
-    String? imageUrl,
-  ) {
+  String? _resolveDoctorImageUrl(String? imageUrl) {
     final trimmedUrl = imageUrl?.trim();
 
     if (trimmedUrl == null || trimmedUrl.isEmpty) {
@@ -94,11 +90,18 @@ class _AppointmentBookingSuccessPageState
       return trimmedUrl;
     }
 
+    final baseUri = Uri.parse(ApiClient.baseUrl);
+
     if (uri.host == 'localhost' ||
-        uri.host == '127.0.0.1') {
-      return uri.replace(
-        host: '10.0.2.2',
-      ).toString();
+        uri.host == '127.0.0.1' ||
+        uri.host == '10.0.2.2') {
+      return uri
+          .replace(
+            scheme: baseUri.scheme,
+            host: baseUri.host,
+            port: baseUri.hasPort ? baseUri.port : null,
+          )
+          .toString();
     }
 
     return trimmedUrl;
@@ -121,9 +124,7 @@ class _AppointmentBookingSuccessPageState
   }
 
   Widget _buildDoctorAvatar() {
-    final imageUrl = _resolveDoctorImageUrl(
-      widget.doctor.profileImageUrl,
-    );
+    final imageUrl = _resolveDoctorImageUrl(widget.doctor.profileImageUrl);
 
     if (imageUrl == null) {
       return _buildDoctorPlaceholder();
@@ -135,11 +136,7 @@ class _AppointmentBookingSuccessPageState
         width: 48,
         height: 48,
         fit: BoxFit.cover,
-        errorBuilder: (
-          context,
-          error,
-          stackTrace,
-        ) {
+        errorBuilder: (context, error, stackTrace) {
           return _buildDoctorPlaceholder();
         },
       ),
@@ -168,23 +165,14 @@ class _AppointmentBookingSuccessPageState
         centerTitle: true,
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
-          child: Divider(
-            height: 1,
-            thickness: 1,
-            color: Color(0xFFE8ECF2),
-          ),
+          child: Divider(height: 1, thickness: 1, color: Color(0xFFE8ECF2)),
         ),
       ),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                20,
-                12,
-                20,
-                24,
-              ),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
               child: ConstrainedBox(
                 constraints: BoxConstraints(
                   minHeight: constraints.maxHeight - 36,
@@ -217,8 +205,7 @@ class _AppointmentBookingSuccessPageState
           child: AnimatedBuilder(
             animation: _successAnimationController,
             builder: (context, child) {
-              final animationValue =
-                  _successAnimationController.value;
+              final animationValue = _successAnimationController.value;
 
               return SizedBox(
                 width: 96,
@@ -259,10 +246,7 @@ class _AppointmentBookingSuccessPageState
                       ),
                     ),
                     Transform.translate(
-                      offset: Offset(
-                        0,
-                        _successMoveAnimation.value,
-                      ),
+                      offset: Offset(0, _successMoveAnimation.value),
                       child: Transform.scale(
                         scale: _successScaleAnimation.value,
                         child: Container(
@@ -273,18 +257,11 @@ class _AppointmentBookingSuccessPageState
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF16A34A)
-                                    .withValues(
-                                  alpha:
-                                      0.10 +
-                                      (animationValue * 0.10),
+                                color: const Color(0xFF16A34A).withValues(
+                                  alpha: 0.10 + (animationValue * 0.10),
                                 ),
-                                blurRadius:
-                                    14 +
-                                    (animationValue * 7),
-                                spreadRadius:
-                                    2 +
-                                    (animationValue * 2),
+                                blurRadius: 14 + (animationValue * 7),
+                                spreadRadius: 2 + (animationValue * 2),
                               ),
                             ],
                           ),
@@ -346,27 +323,18 @@ class _AppointmentBookingSuccessPageState
     );
   }
 
-  Widget _buildSuccessDot({
-    required double size,
-    required Color color,
-  }) {
+  Widget _buildSuccessDot({required double size, required Color color}) {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 
   Widget _buildConfirmedBadge() {
     return Center(
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 13,
-          vertical: 5,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
         decoration: BoxDecoration(
           color: const Color(0xFFD9FBE2),
           borderRadius: BorderRadius.circular(20),
@@ -395,29 +363,17 @@ class _AppointmentBookingSuccessPageState
     );
   }
 
-  Widget _buildAppointmentCard(
-    BuildContext context,
-  ) {
+  Widget _buildAppointmentCard(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
-        16,
-        16,
-        16,
-        18,
-      ),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE8ECF2),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFE8ECF2), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(
-              alpha: 0.035,
-            ),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -428,18 +384,12 @@ class _AppointmentBookingSuccessPageState
         children: [
           _buildDoctorInfo(),
           const SizedBox(height: 16),
-          const Divider(
-            height: 1,
-            thickness: 1,
-            color: Color(0xFFE9EDF2),
-          ),
+          const Divider(height: 1, thickness: 1, color: Color(0xFFE9EDF2)),
           const SizedBox(height: 16),
           _buildAppointmentInfo(
             icon: Icons.calendar_today_outlined,
             label: 'วันที่',
-            value: _formatThaiDate(
-              widget.appointment.appointmentDate,
-            ),
+            value: _formatThaiDate(widget.appointment.appointmentDate),
           ),
           const SizedBox(height: 13),
           _buildAppointmentInfo(
@@ -511,11 +461,7 @@ class _AppointmentBookingSuccessPageState
             color: AppTheme.primaryBackgroundColor,
             borderRadius: BorderRadius.circular(9),
           ),
-          child: Icon(
-            icon,
-            size: 16,
-            color: AppTheme.primaryColor,
-          ),
+          child: Icon(icon, size: 16, color: AppTheme.primaryColor),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -549,9 +495,7 @@ class _AppointmentBookingSuccessPageState
     );
   }
 
-  Widget _buildDetailButton(
-    BuildContext context,
-  ) {
+  Widget _buildDetailButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       height: 52,
@@ -569,9 +513,7 @@ class _AppointmentBookingSuccessPageState
         },
         style: ElevatedButton.styleFrom(
           elevation: 2,
-          shadowColor: AppTheme.primaryColor.withValues(
-            alpha: 0.25,
-          ),
+          shadowColor: AppTheme.primaryColor.withValues(alpha: 0.25),
           backgroundColor: AppTheme.primaryColor,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
@@ -591,18 +533,14 @@ class _AppointmentBookingSuccessPageState
     );
   }
 
-  Widget _buildHomeButton(
-    BuildContext context,
-  ) {
+  Widget _buildHomeButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       height: 36,
       child: TextButton(
         onPressed: () {
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (_) => const AppShell(),
-            ),
+            MaterialPageRoute(builder: (_) => const AppShell()),
             (route) => false,
           );
         },
@@ -623,9 +561,7 @@ class _AppointmentBookingSuccessPageState
     );
   }
 
-  String _formatThaiDate(
-    DateTime date,
-  ) {
+  String _formatThaiDate(DateTime date) {
     const months = [
       'มกราคม',
       'กุมภาพันธ์',

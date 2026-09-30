@@ -223,26 +223,3 @@
     gap: 12px;
   }
 }
-
-.doctor-header-right {
-  flex-shrink: 0;
-  padding-top: 2px;
-}
-
-.today-date {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-}
-
-.today-date span {
-  color: var(--text-secondary);
-  font-size: 13px;
-}
-
-.today-date strong {
-  color: var(--text-h);
-  font-size: 14px;
-  font-weight: 500;
-}

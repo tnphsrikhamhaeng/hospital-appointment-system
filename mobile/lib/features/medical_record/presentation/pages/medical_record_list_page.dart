@@ -3,8 +3,14 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../appointment/data/models/appointment_model.dart';
+import '../../../search/data/models/department_model.dart';
 import '../../data/models/medical_record_model.dart';
+import '../../../appointment/data/repositories/appointment_repository.dart';
+import '../../../search/data/repositories/department_repository.dart';
 import '../../data/repositories/medical_record_repository.dart';
+import '../../../appointment/data/services/appointment_api_service.dart';
+import '../../../search/data/services/department_api_service.dart';
 import '../../data/services/medical_record_api_service.dart';
 import 'medical_record_details_page.dart';
 
@@ -21,26 +27,20 @@ class MedicalRecordListPage extends StatefulWidget {
   const MedicalRecordListPage({super.key});
 
   @override
-  State<MedicalRecordListPage> createState() =>
-      _MedicalRecordListPageState();
+  State<MedicalRecordListPage> createState() => _MedicalRecordListPageState();
 }
 
-class _MedicalRecordListPageState
-    extends State<MedicalRecordListPage> {
+class _MedicalRecordListPageState extends State<MedicalRecordListPage> {
   late final MedicalRecordRepository _medicalRecordRepository;
+  late final AppointmentRepository _appointmentRepository;
+  late final DepartmentRepository _departmentRepository;
 
-  final TextEditingController _searchController =
-      TextEditingController();
-
-  String _selectedFilter = 'ทั้งหมด';
-
-  final List<String> _filters = const [
-    'ทั้งหมด',
-    '2569',
-    '2568',
-  ];
+  DateTime? _selectedDate;
+  String? _selectedDepartmentId;
 
   List<MedicalRecordModel> _records = [];
+  List<AppointmentModel> _appointments = [];
+  List<DepartmentModel> _departments = [];
 
   bool _isLoading = true;
   String? _errorMessage;
@@ -52,19 +52,18 @@ class _MedicalRecordListPageState
     final apiClient = ApiClient();
 
     _medicalRecordRepository = MedicalRecordRepository(
-      medicalRecordApiService:
-          MedicalRecordApiService(
-        apiClient: apiClient,
-      ),
+      medicalRecordApiService: MedicalRecordApiService(apiClient: apiClient),
+    );
+
+    _appointmentRepository = AppointmentRepository(
+      appointmentApiService: AppointmentApiService(apiClient: apiClient),
+    );
+
+    _departmentRepository = DepartmentRepository(
+      departmentApiService: DepartmentApiService(apiClient: apiClient),
     );
 
     _loadMedicalRecords();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadMedicalRecords() async {
@@ -78,8 +77,24 @@ class _MedicalRecordListPageState
     });
 
     try {
-      final records =
-          await _medicalRecordRepository.getMedicalRecords();
+      final records = await _medicalRecordRepository.getMedicalRecords();
+
+      final patientIds = records
+          .map((record) => record.patientId)
+          .where((id) => id.isNotEmpty)
+          .toSet();
+
+      final appointmentResults = await Future.wait(
+        patientIds.map(
+          (patientId) => _appointmentRepository.getPatientAppointments(
+            patientId: patientId,
+          ),
+        ),
+      );
+
+      final appointments = appointmentResults.expand((items) => items).toList();
+
+      final departments = await _departmentRepository.getDepartments();
 
       if (!mounted) {
         return;
@@ -87,6 +102,8 @@ class _MedicalRecordListPageState
 
       setState(() {
         _records = records;
+        _appointments = appointments;
+        _departments = departments;
         _isLoading = false;
       });
     } on DioException catch (error) {
@@ -105,11 +122,7 @@ class _MedicalRecordListPageState
 
       setState(() {
         _isLoading = false;
-        _errorMessage =
-            error.toString().replaceFirst(
-              'Exception: ',
-              '',
-            );
+        _errorMessage = error.toString().replaceFirst('Exception: ', '');
       });
     }
   }
@@ -140,32 +153,247 @@ class _MedicalRecordListPageState
     return 'ไม่สามารถโหลดประวัติการรักษาได้ กรุณาลองใหม่';
   }
 
+  AppointmentModel? _getAppointment(MedicalRecordModel record) {
+    for (final appointment in _appointments) {
+      if (appointment.id == record.appointmentId) {
+        return appointment;
+      }
+    }
+
+    return null;
+  }
+
+  DepartmentModel? _getDepartment(MedicalRecordModel record) {
+    final appointment = _getAppointment(record);
+
+    if (appointment == null) {
+      return null;
+    }
+
+    for (final department in _departments) {
+      if (department.id == appointment.departmentId) {
+        return department;
+      }
+    }
+
+    return null;
+  }
+
   List<MedicalRecordModel> get _filteredRecords {
-    final query =
-        _searchController.text.trim().toLowerCase();
-
     return _records.where((record) {
-      final matchesSearch =
-          query.isEmpty ||
-          record.chiefComplaint
-              .toLowerCase()
-              .contains(query) ||
-          record.diagnosis
-              .toLowerCase()
-              .contains(query) ||
-          record.doctorId
-              .toLowerCase()
-              .contains(query);
+      final appointment = _getAppointment(record);
 
-      final year =
-          (record.createdAt.toLocal().year + 543).toString();
+      final matchesDate =
+          _selectedDate == null ||
+          (appointment != null &&
+              _isSameDate(appointment.appointmentDate, _selectedDate!));
 
-      final matchesYear =
-          _selectedFilter == 'ทั้งหมด' ||
-          year == _selectedFilter;
+      final matchesDepartment =
+          _selectedDepartmentId == null ||
+          (appointment != null &&
+              appointment.departmentId == _selectedDepartmentId);
 
-      return matchesSearch && matchesYear;
+      return matchesDate && matchesDepartment;
     }).toList();
+  }
+
+  bool _isSameDate(DateTime first, DateTime second) {
+    final firstLocal = first.toLocal();
+    final secondLocal = second.toLocal();
+
+    return firstLocal.year == secondLocal.year &&
+        firstLocal.month == secondLocal.month &&
+        firstLocal.day == secondLocal.day;
+  }
+
+  DepartmentModel? get _selectedDepartment {
+    if (_selectedDepartmentId == null) {
+      return null;
+    }
+
+    for (final department in _departments) {
+      if (department.id == _selectedDepartmentId) {
+        return department;
+      }
+    }
+
+    return null;
+  }
+
+  bool get _hasActiveFilters {
+    return _selectedDate != null || _selectedDepartmentId != null;
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _selectedDate = null;
+      _selectedDepartmentId = null;
+    });
+  }
+
+  Future<void> _selectDate() async {
+    final now = DateTime.now();
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? now,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(now.year + 1),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppTheme.primaryColor,
+              onPrimary: Colors.white,
+              surface: AppTheme.surfaceColor,
+              onSurface: AppTheme.textPrimaryColor,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _selectedDate = pickedDate;
+    });
+  }
+
+  Future<void> _selectDepartment() async {
+    final selectedId = await showModalBottomSheet<String?>(
+      context: context,
+      backgroundColor: AppTheme.surfaceColor,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD9DEE7),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'เลือกแผนก',
+                  style: TextStyle(
+                    fontFamily: 'Kanit',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimaryColor,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                  leading: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBackgroundColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.apps_rounded,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                  title: const Text(
+                    'ทุกแผนก',
+                    style: TextStyle(
+                      fontFamily: 'Kanit',
+                      fontSize: 14,
+                      color: AppTheme.textPrimaryColor,
+                    ),
+                  ),
+                  trailing: _selectedDepartmentId == null
+                      ? const Icon(
+                          Icons.check_rounded,
+                          color: AppTheme.primaryColor,
+                        )
+                      : null,
+                  onTap: () {
+                    Navigator.of(context).pop(null);
+                  },
+                ),
+                const Divider(height: 1),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: _departments.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final department = _departments[index];
+
+                      final isSelected = department.id == _selectedDepartmentId;
+
+                      return ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                        ),
+                        leading: Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryBackgroundColor,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.medical_services_rounded,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                        title: Text(
+                          department.name,
+                          style: const TextStyle(
+                            fontFamily: 'Kanit',
+                            fontSize: 14,
+                            color: AppTheme.textPrimaryColor,
+                          ),
+                        ),
+                        trailing: isSelected
+                            ? const Icon(
+                                Icons.check_rounded,
+                                color: AppTheme.primaryColor,
+                              )
+                            : null,
+                        onTap: () {
+                          Navigator.of(context).pop(department.id);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _selectedDepartmentId = selectedId;
+    });
   }
 
   @override
@@ -190,11 +418,7 @@ class _MedicalRecordListPageState
         ),
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
-          child: Divider(
-            height: 1,
-            thickness: 1,
-            color: Color(0xFFE8ECF2),
-          ),
+          child: Divider(height: 1, thickness: 1, color: Color(0xFFE8ECF2)),
         ),
       ),
       body: SafeArea(
@@ -204,27 +428,21 @@ class _MedicalRecordListPageState
             onRefresh: _loadMedicalRecords,
             color: AppTheme.primaryColor,
             child: SingleChildScrollView(
-            keyboardDismissBehavior:
-                ScrollViewKeyboardDismissBehavior.onDrag,
-            physics:
-                const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(
-              20,
-              20,
-              20,
-              100,
-            ),
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                _buildSearchField(),
-                const SizedBox(height: 16),
-                _buildFilterChips(),
-                const SizedBox(height: 20),
-                _buildRecordList(),
-              ],
-            ),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildFilterButtons(),
+                  if (_hasActiveFilters) ...[
+                    const SizedBox(height: 12),
+                    _buildActiveFilters(),
+                  ],
+                  const SizedBox(height: 20),
+                  _buildRecordList(),
+                ],
+              ),
             ),
           ),
         ),
@@ -232,178 +450,212 @@ class _MedicalRecordListPageState
     );
   }
 
-  Widget _buildSearchField() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.textSecondaryColor
-              .withValues(alpha: 0.10),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color:
-                Colors.white.withValues(alpha: 0.90),
-            blurRadius: 6,
-            offset: const Offset(0, -2),
+  Widget _buildFilterButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildFilterButton(
+            icon: Icons.calendar_month_rounded,
+            label: _selectedDate == null
+                ? 'เลือกวันที่'
+                : _formatFilterDate(_selectedDate!),
+            isSelected: _selectedDate != null,
+            onTap: _selectDate,
           ),
-          BoxShadow(
-            color:
-                Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _buildFilterButton(
+            icon: Icons.local_hospital_rounded,
+            label: _selectedDepartment == null
+                ? 'เลือกแผนก'
+                : _selectedDepartment!.name,
+            isSelected: _selectedDepartment != null,
+            onTap: _selectDepartment,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterButton({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(13),
+        child: Container(
+          height: 46,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppTheme.primaryBackgroundColor
+                : AppTheme.surfaceColor,
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(
+              color: isSelected
+                  ? AppTheme.primaryColor.withValues(alpha: 0.35)
+                  : AppTheme.textSecondaryColor.withValues(alpha: 0.12),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 19,
+                color: isSelected
+                    ? AppTheme.primaryColor
+                    : AppTheme.textSecondaryColor,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Kanit',
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
+                    color: isSelected
+                        ? AppTheme.primaryColor
+                        : AppTheme.textSecondaryColor,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 20,
+                color: isSelected
+                    ? AppTheme.primaryColor
+                    : AppTheme.textSecondaryColor,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActiveFilters() {
+    return Row(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                if (_selectedDate != null)
+                  _buildActiveFilterChip(
+                    icon: Icons.calendar_month_rounded,
+                    label: _formatFilterDate(_selectedDate!),
+                    onRemove: () {
+                      setState(() {
+                        _selectedDate = null;
+                      });
+                    },
+                  ),
+                if (_selectedDate != null && _selectedDepartment != null)
+                  const SizedBox(width: 8),
+                if (_selectedDepartment != null)
+                  _buildActiveFilterChip(
+                    icon: Icons.local_hospital_rounded,
+                    label: _selectedDepartment!.name,
+                    onRemove: () {
+                      setState(() {
+                        _selectedDepartmentId = null;
+                      });
+                    },
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        TextButton(
+          onPressed: _clearFilters,
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: const Text(
+            'ล้าง',
+            style: TextStyle(
+              fontFamily: 'Kanit',
+              fontSize: 12,
+              color: AppTheme.primaryColor,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActiveFilterChip({
+    required IconData icon,
+    required String label,
+    required VoidCallback onRemove,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryBackgroundColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: AppTheme.primaryColor),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'Kanit',
+              fontSize: 11,
+              color: AppTheme.primaryColor,
+            ),
+          ),
+          const SizedBox(width: 4),
+          GestureDetector(
+            onTap: onRemove,
+            child: const Icon(
+              Icons.close_rounded,
+              size: 15,
+              color: AppTheme.primaryColor,
+            ),
           ),
         ],
       ),
-      child: TextField(
-        controller: _searchController,
-        onChanged: (_) {
-          setState(() {});
-        },
-        style: const TextStyle(
-          fontFamily: 'Kanit',
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          color: AppTheme.textPrimaryColor,
-        ),
-        decoration: InputDecoration(
-          hintText: 'ค้นหาประวัติการรักษา...',
-          hintStyle: const TextStyle(
-            fontFamily: 'Kanit',
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-            color: AppTheme.textSecondaryColor,
-          ),
-          prefixIcon: const Icon(
-            Icons.search_rounded,
-            size: 22,
-            color: AppTheme.primaryColor,
-          ),
-          suffixIcon: _searchController.text.isEmpty
-              ? null
-              : IconButton(
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() {});
-                  },
-                  icon: const Icon(
-                    Icons.close_rounded,
-                    size: 18,
-                  ),
-                ),
-          filled: true,
-          fillColor: Colors.transparent,
-          contentPadding:
-              const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 15,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(
-              color: AppTheme.primaryColor
-                  .withValues(alpha: 0.45),
-              width: 1.2,
-            ),
-          ),
-        ),
-      ),
     );
   }
 
-  Widget _buildFilterChips() {
-    return SizedBox(
-      height: 44,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: _filters.length,
-        separatorBuilder: (_, __) =>
-            const SizedBox(width: 9),
-        itemBuilder: (context, index) {
-          final filter = _filters[index];
-          final isSelected =
-              filter == _selectedFilter;
+  String _formatFilterDate(DateTime date) {
+    final localDate = date.toLocal();
 
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedFilter = filter;
-              });
-            },
-            child: AnimatedContainer(
-              duration:
-                  const Duration(milliseconds: 180),
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 15,
-                vertical: 10,
-              ),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppTheme.primaryColor
-                    : AppTheme.surfaceColor,
-                borderRadius:
-                    BorderRadius.circular(12),
-                border: Border.all(
-                  color: isSelected
-                      ? AppTheme.primaryColor
-                      : AppTheme.textSecondaryColor
-                          .withValues(alpha: 0.12),
-                ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: AppTheme.primaryColor
-                              .withValues(alpha: 0.18),
-                          blurRadius: 8,
-                          offset:
-                              const Offset(0, 3),
-                        ),
-                      ]
-                    : [
-                        BoxShadow(
-                          color: Colors.white
-                              .withValues(alpha: 0.80),
-                          blurRadius: 5,
-                          offset:
-                              const Offset(0, -1),
-                        ),
-                        BoxShadow(
-                          color: Colors.black
-                              .withValues(alpha: 0.025),
-                          blurRadius: 6,
-                          offset:
-                              const Offset(0, 2),
-                        ),
-                      ],
-              ),
-              child: Text(
-                filter,
-                style: TextStyle(
-                  fontFamily: 'Kanit',
-                  fontSize: 13,
-                  fontWeight: isSelected
-                      ? FontWeight.w500
-                      : FontWeight.w400,
-                  color: isSelected
-                      ? Colors.white
-                      : AppTheme.textSecondaryColor,
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
+    const thaiMonths = [
+      'ม.ค.',
+      'ก.พ.',
+      'มี.ค.',
+      'เม.ย.',
+      'พ.ค.',
+      'มิ.ย.',
+      'ก.ค.',
+      'ส.ค.',
+      'ก.ย.',
+      'ต.ค.',
+      'พ.ย.',
+      'ธ.ค.',
+    ];
+
+    return '${localDate.day} '
+        '${thaiMonths[localDate.month - 1]} '
+        '${localDate.year + 543}';
   }
 
   Widget _buildRecordList() {
@@ -424,17 +676,14 @@ class _MedicalRecordListPageState
     return Column(
       children: records.map((record) {
         return Padding(
-          padding:
-              const EdgeInsets.only(bottom: 14),
+          padding: const EdgeInsets.only(bottom: 14),
           child: _MedicalRecordCard(
             record: record,
+            department: _getDepartment(record),
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) =>
-                      MedicalRecordDetailsPage(
-                    record: record,
-                  ),
+                  builder: (_) => MedicalRecordDetailsPage(record: record),
                 ),
               );
             },
@@ -447,8 +696,7 @@ class _MedicalRecordListPageState
   Widget _buildLoadingState() {
     return Container(
       width: double.infinity,
-      padding:
-          const EdgeInsets.symmetric(vertical: 48),
+      padding: const EdgeInsets.symmetric(vertical: 48),
       child: const Column(
         children: [
           SizedBox(
@@ -480,12 +728,7 @@ class _MedicalRecordListPageState
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color:
-              AppTheme.errorColor.withValues(
-            alpha: 0.20,
-          ),
-        ),
+        border: Border.all(color: AppTheme.errorColor.withValues(alpha: 0.20)),
       ),
       child: Column(
         children: [
@@ -507,12 +750,7 @@ class _MedicalRecordListPageState
           const SizedBox(height: 12),
           OutlinedButton(
             onPressed: _loadMedicalRecords,
-            child: const Text(
-              'ลองใหม่',
-              style: TextStyle(
-                fontFamily: 'Kanit',
-              ),
-            ),
+            child: const Text('ลองใหม่', style: TextStyle(fontFamily: 'Kanit')),
           ),
         ],
       ),
@@ -522,28 +760,21 @@ class _MedicalRecordListPageState
   Widget _buildEmptyState() {
     return Container(
       width: double.infinity,
-      padding:
-          const EdgeInsets.symmetric(
-        horizontal: 24,
-        vertical: 44,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 44),
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: AppTheme.textSecondaryColor
-              .withValues(alpha: 0.10),
+          color: AppTheme.textSecondaryColor.withValues(alpha: 0.10),
         ),
         boxShadow: [
           BoxShadow(
-            color:
-                Colors.white.withValues(alpha: 0.90),
+            color: Colors.white.withValues(alpha: 0.90),
             blurRadius: 6,
             offset: const Offset(0, -2),
           ),
           BoxShadow(
-            color:
-                Colors.black.withValues(alpha: 0.035),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -568,7 +799,7 @@ class _MedicalRecordListPageState
           ),
           SizedBox(height: 5),
           Text(
-            'ลองค้นหาด้วยคำอื่นหรือเปลี่ยนตัวกรอง',
+            'ลองเปลี่ยนวันที่หรือแผนกที่เลือก',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: 'Kanit',
@@ -585,12 +816,10 @@ class _MedicalRecordListPageState
 
 class _MedicalRecordCard extends StatelessWidget {
   final MedicalRecordModel record;
+  final DepartmentModel? department;
   final VoidCallback? onTap;
 
-  const _MedicalRecordCard({
-    required this.record,
-    this.onTap,
-  });
+  const _MedicalRecordCard({required this.record, this.department, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -601,50 +830,37 @@ class _MedicalRecordCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         child: Container(
           width: double.infinity,
-          padding:
-              const EdgeInsets.fromLTRB(
-            18,
-            18,
-            18,
-            16,
-          ),
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
           decoration: BoxDecoration(
             color: AppTheme.surfaceColor,
-            borderRadius:
-                BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: AppTheme.textSecondaryColor
-                  .withValues(alpha: 0.10),
+              color: AppTheme.textSecondaryColor.withValues(alpha: 0.10),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.white
-                    .withValues(alpha: 0.90),
+                color: Colors.white.withValues(alpha: 0.90),
                 blurRadius: 6,
                 offset: const Offset(0, -2),
               ),
               BoxShadow(
-                color: Colors.black
-                    .withValues(alpha: 0.045),
+                color: Colors.black.withValues(alpha: 0.045),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Container(
                     width: 52,
                     height: 52,
                     decoration: BoxDecoration(
-                      color: AppTheme
-                          .primaryBackgroundColor,
+                      color: AppTheme.primaryBackgroundColor,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -655,89 +871,52 @@ class _MedicalRecordCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 14),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Row(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                'ประวัติการรักษา',
-                                maxLines: 1,
-                                overflow:
-                                    TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontFamily: 'Kanit',
-                                  fontSize: 17,
-                                  fontWeight:
-                                      FontWeight.w600,
-                                  color: AppTheme
-                                      .textPrimaryColor,
-                                ),
-                              ),
+                        Expanded(
+                          child: Text(
+                            _formatDate(record.createdAt),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamily: 'Kanit',
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textPrimaryColor,
                             ),
-                            const SizedBox(width: 8),
-                            _buildStatus(),
-                          ],
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          _formatDate(
-                            record.createdAt,
-                          ),
-                          style: const TextStyle(
-                            fontFamily: 'Kanit',
-                            fontSize: 13,
-                            fontWeight:
-                                FontWeight.w400,
-                            color: AppTheme
-                                .textSecondaryColor,
                           ),
                         ),
+                        const SizedBox(width: 10),
+                        _buildStatus(),
                       ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 0),
               Padding(
-                padding:
-                    const EdgeInsets.only(left: 66),
+                padding: const EdgeInsets.only(left: 66),
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildInfoText(
-                      'อาการหลัก',
-                      record.chiefComplaint,
-                    ),
+                    if (department != null) ...[
+                      _buildInfoText('แผนก', department!.name),
+                      const SizedBox(height: 6),
+                    ],
+                    _buildInfoText('อาการหลัก', record.chiefComplaint),
                     const SizedBox(height: 6),
-                    _buildInfoText(
-                      'การวินิจฉัย',
-                      record.diagnosis,
-                    ),
+                    _buildInfoText('การวินิจฉัย', record.diagnosis),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
-              const Divider(
-                height: 1,
-                thickness: 1,
-                color: Color(0xFFE9EDF2),
-              ),
+              const Divider(height: 1, thickness: 1, color: Color(0xFFE9EDF2)),
               InkWell(
                 onTap: onTap,
-                borderRadius:
-                    BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(10),
                 child: Padding(
-                  padding:
-                      const EdgeInsets.only(
-                    top: 11,
-                    bottom: 2,
-                  ),
+                  padding: const EdgeInsets.only(top: 11, bottom: 2),
                   child: Row(
                     children: [
                       const Text(
@@ -745,18 +924,15 @@ class _MedicalRecordCard extends StatelessWidget {
                         style: TextStyle(
                           fontFamily: 'Kanit',
                           fontSize: 13,
-                          fontWeight:
-                              FontWeight.w500,
-                          color:
-                              AppTheme.primaryColor,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.primaryColor,
                         ),
                       ),
                       const Spacer(),
                       Icon(
                         Icons.chevron_right_rounded,
                         size: 22,
-                        color:
-                            AppTheme.primaryColor,
+                        color: AppTheme.primaryColor,
                       ),
                     ],
                   ),
@@ -771,15 +947,10 @@ class _MedicalRecordCard extends StatelessWidget {
 
   Widget _buildStatus() {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(
-        horizontal: 9,
-        vertical: 4,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
         color: const Color(0xFFE1FBE8),
-        borderRadius:
-            BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: const Text(
         'เสร็จสิ้น',
@@ -793,10 +964,7 @@ class _MedicalRecordCard extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoText(
-    String label,
-    String value,
-  ) {
+  Widget _buildInfoText(String label, String value) {
     return RichText(
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -817,9 +985,7 @@ class _MedicalRecordCard extends StatelessWidget {
           ),
           TextSpan(
             text: value,
-            style: const TextStyle(
-              fontWeight: FontWeight.w400,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w400),
           ),
         ],
       ),
@@ -828,6 +994,7 @@ class _MedicalRecordCard extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     final localDate = date.toLocal();
+
     const thaiMonths = [
       'มกราคม',
       'กุมภาพันธ์',

@@ -11,7 +11,7 @@ from alembic import op
 
 
 # revision identifiers, used by Alembic.
-revision: str = "add_appointment_overlap_constraints"
+revision: str = "aoc_20260914"
 down_revision: Union[str, Sequence[str], None] = "9f401486b70d"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

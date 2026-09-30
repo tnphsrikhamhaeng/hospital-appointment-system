@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/theme/app_theme.dart';
 
 import '../../../search/data/models/department_model.dart';
 import '../../../search/data/repositories/department_repository.dart';
@@ -30,15 +30,15 @@ class _NoStretchScrollBehavior extends ScrollBehavior {
 
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
+
   final FocusNode _searchFocusNode = FocusNode();
 
   final DepartmentRepository _departmentRepository = DepartmentRepository(
     departmentApiService: DepartmentApiService(apiClient: ApiClient()),
   );
 
-  String _selectedSymptom = '';
-
   List<String> _filteredSymptoms = [];
+  List<DepartmentModel> _filteredDepartments = [];
   List<DepartmentModel> _departments = [];
 
   bool _isLoadingDepartments = true;
@@ -53,7 +53,7 @@ class _SearchPageState extends State<SearchPage> {
     _loadDepartments();
 
     if (widget.initialQuery.trim().isNotEmpty) {
-      _updateSearchResults(widget.initialQuery, autoSelect: true);
+      _updateSearchResults(widget.initialQuery);
     }
   }
 
@@ -84,6 +84,10 @@ class _SearchPageState extends State<SearchPage> {
 
         _isLoadingDepartments = false;
       });
+
+      if (_searchController.text.trim().isNotEmpty) {
+        _updateSearchResults(_searchController.text);
+      }
     } catch (_) {
       if (!mounted) {
         return;
@@ -96,43 +100,74 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
-  void _updateSearchResults(String query, {bool autoSelect = false}) {
-    final normalizedQuery = query.trim();
+  void _updateSearchResults(String query) {
+    final normalizedQuery = query.trim().toLowerCase();
+
+    if (normalizedQuery.isEmpty) {
+      setState(() {
+        _filteredSymptoms = [];
+        _filteredDepartments = [];
+      });
+
+      return;
+    }
+
+    final symptoms = SymptomConfig.symptoms
+        .where((symptom) => symptom.toLowerCase().contains(normalizedQuery))
+        .toList();
+
+    final departments = _departments
+        .where(
+          (department) =>
+              department.name.toLowerCase().contains(normalizedQuery),
+        )
+        .toList();
 
     setState(() {
-      if (normalizedQuery.isEmpty) {
-        _filteredSymptoms = [];
-        _selectedSymptom = '';
-        return;
-      }
-
-      _filteredSymptoms = SymptomConfig.symptoms
-          .where((symptom) => symptom.contains(normalizedQuery))
-          .toList();
-
-      if (autoSelect && _filteredSymptoms.isNotEmpty) {
-        _selectedSymptom = _filteredSymptoms.first;
-      } else {
-        _selectedSymptom = '';
-      }
+      _filteredSymptoms = symptoms;
+      _filteredDepartments = departments;
     });
   }
 
   void _selectSymptom(String symptom) {
+    final relatedDepartments = _getDepartmentsForSymptoms([symptom]);
+
     setState(() {
-      _selectedSymptom = symptom;
       _searchController.text = symptom;
+
       _searchController.selection = TextSelection.fromPosition(
         TextPosition(offset: _searchController.text.length),
       );
+
+      _filteredSymptoms = SymptomConfig.symptoms
+          .where((item) => item.toLowerCase().contains(symptom.toLowerCase()))
+          .toList();
+
+      _filteredDepartments = relatedDepartments;
     });
   }
 
   void _clearSearch() {
     setState(() {
       _searchController.clear();
-      _selectedSymptom = '';
+      _filteredSymptoms = [];
+      _filteredDepartments = [];
     });
+  }
+
+  List<DepartmentModel> _getDepartmentsForSymptoms(List<String> symptoms) {
+    final departmentNames = <String>{};
+
+    for (final symptom in symptoms) {
+      final relatedNames = SymptomConfig.symptomDepartmentNames[symptom] ?? [];
+
+      departmentNames.addAll(relatedNames);
+    }
+
+    return departmentNames
+        .map(_findDepartmentByName)
+        .whereType<DepartmentModel>()
+        .toList();
   }
 
   DepartmentModel? _findDepartmentByName(String departmentName) {
@@ -145,14 +180,12 @@ class _SearchPageState extends State<SearchPage> {
     return null;
   }
 
-  List<DepartmentModel> _getRelatedDepartments() {
-    final departmentNames =
-        SymptomConfig.symptomDepartmentNames[_selectedSymptom] ?? [];
+  List<DepartmentModel> _getSearchRelatedDepartments() {
+    if (_filteredSymptoms.isEmpty) {
+      return [];
+    }
 
-    return departmentNames
-        .map(_findDepartmentByName)
-        .whereType<DepartmentModel>()
-        .toList();
+    return _getDepartmentsForSymptoms(_filteredSymptoms);
   }
 
   void _openDoctorSelection(String departmentName) {
@@ -160,6 +193,7 @@ class _SearchPageState extends State<SearchPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('กำลังโหลดข้อมูลแผนก กรุณารอสักครู่')),
       );
+
       return;
     }
 
@@ -170,6 +204,7 @@ class _SearchPageState extends State<SearchPage> {
           action: SnackBarAction(label: 'ลองใหม่', onPressed: _loadDepartments),
         ),
       );
+
       return;
     }
 
@@ -179,6 +214,7 @@ class _SearchPageState extends State<SearchPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('ไม่พบข้อมูลแผนกจากระบบ')));
+
       return;
     }
 
@@ -192,6 +228,48 @@ class _SearchPageState extends State<SearchPage> {
         ),
       ),
     );
+  }
+
+  IconData _getDepartmentIcon(String departmentName) {
+    switch (departmentName.trim()) {
+      case 'ศูนย์สมองและระบบประสาท':
+        return Icons.psychology_rounded;
+
+      case 'คลินิกอายุรกรรม':
+        return Icons.medical_services_rounded;
+
+      case 'ศูนย์หัวใจ':
+        return Icons.favorite_rounded;
+
+      case 'ศูนย์ทางเดินอาหาร':
+        return Icons.restaurant_rounded;
+
+      default:
+        return Icons.medical_services_rounded;
+    }
+  }
+
+  Color _getDepartmentColor(String departmentName) {
+    switch (departmentName.trim()) {
+      case 'ศูนย์สมองและระบบประสาท':
+        return AppTheme.primaryColor;
+
+      case 'คลินิกอายุรกรรม':
+        return AppTheme.successColor;
+
+      case 'ศูนย์หัวใจ':
+        return AppTheme.errorColor;
+
+      case 'ศูนย์ทางเดินอาหาร':
+        return AppTheme.warningColor;
+
+      default:
+        return AppTheme.primaryColor;
+    }
+  }
+
+  Color _getDepartmentBackgroundColor(String departmentName) {
+    return _getDepartmentColor(departmentName).withValues(alpha: 0.10);
   }
 
   @override
@@ -211,11 +289,7 @@ class _SearchPageState extends State<SearchPage> {
                     const SizedBox(height: 28),
                     _buildSearchField(context),
                     const SizedBox(height: 30),
-                    _buildSymptomSection(context),
-                    if (_selectedSymptom.isNotEmpty) ...[
-                      const SizedBox(height: 30),
-                      _buildDepartmentSection(context),
-                    ],
+                    _buildSearchContent(context),
                   ]),
                 ),
               ),
@@ -276,7 +350,7 @@ class _SearchPageState extends State<SearchPage> {
           fontWeight: FontWeight.w500,
         ),
         decoration: InputDecoration(
-          hintText: 'ค้นหาอาการ แผนก หรือแพทย์',
+          hintText: 'ค้นหาอาการ หรือแผนก',
           hintStyle: Theme.of(
             context,
           ).textTheme.bodyMedium?.copyWith(color: AppTheme.textMutedColor),
@@ -322,55 +396,96 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildEmptySymptomState(BuildContext context) {
-    final theme = Theme.of(context);
+  Widget _buildSearchContent(BuildContext context) {
+    final query = _searchController.text.trim();
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE8ECF2)),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryBackgroundColor,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.search_off_rounded,
-              color: AppTheme.primaryColor,
-              size: 23,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'ไม่พบอาการที่ตรงกับคำค้นหา',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppTheme.textPrimaryColor,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'ลองค้นหาด้วยคำอื่น',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: AppTheme.textSecondaryColor,
-            ),
+    if (query.isEmpty) {
+      return _buildRecommendedSymptoms(context);
+    }
+
+    if (_isLoadingDepartments) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 30),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_departmentErrorMessage != null) {
+      return _buildDepartmentErrorState(context);
+    }
+
+    final relatedDepartments = _getSearchRelatedDepartments();
+
+    final allDepartments = <String, DepartmentModel>{};
+
+    // แผนกที่เกี่ยวข้องกับอาการ
+    for (final department in relatedDepartments) {
+      allDepartments[department.name.trim()] = department;
+    }
+
+    // แผนกที่ตรงกับคำค้นหา
+    for (final department in _filteredDepartments) {
+      allDepartments[department.name.trim()] = department;
+    }
+
+    final departments = allDepartments.values.toList();
+
+    final hasSymptoms = _filteredSymptoms.isNotEmpty;
+
+    if (!hasSymptoms && departments.isEmpty) {
+      return _buildEmptySearchState(context);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (hasSymptoms) ...[_buildSymptomResults(context)],
+        if (departments.isNotEmpty) ...[
+          if (hasSymptoms) const SizedBox(height: 30),
+          _buildDepartmentResults(
+            context,
+            title: 'แผนกที่เกี่ยวข้อง',
+            departments: departments,
           ),
         ],
-      ),
+      ],
     );
   }
 
-  Widget _buildSymptomSection(BuildContext context) {
+  Widget _buildRecommendedSymptoms(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final symptoms = SymptomConfig.symptoms;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'อาการที่เกี่ยวข้อง',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimaryColor,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: symptoms.map((symptom) {
+            return _buildSymptomChip(
+              context,
+              label: symptom,
+              isSelected: false,
+              onTap: () => _selectSymptom(symptom),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSymptomResults(BuildContext context) {
     final theme = Theme.of(context);
 
     return Column(
@@ -385,24 +500,18 @@ class _SearchPageState extends State<SearchPage> {
           ),
         ),
         const SizedBox(height: 12),
-        if (_searchController.text.trim().isNotEmpty &&
-            _filteredSymptoms.isEmpty)
-          _buildEmptySymptomState(context)
-        else if (_filteredSymptoms.isNotEmpty)
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _filteredSymptoms.map((symptom) {
-              final isSelected = symptom == _selectedSymptom;
-
-              return _buildSymptomChip(
-                context,
-                label: symptom,
-                isSelected: isSelected,
-                onTap: () => _selectSymptom(symptom),
-              );
-            }).toList(),
-          ),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _filteredSymptoms.map((symptom) {
+            return _buildSymptomChip(
+              context,
+              label: symptom,
+              isSelected: false,
+              onTap: () => _selectSymptom(symptom),
+            );
+          }).toList(),
+        ),
       ],
     );
   }
@@ -457,16 +566,18 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildDepartmentSection(BuildContext context) {
+  Widget _buildDepartmentResults(
+    BuildContext context, {
+    required String title,
+    required List<DepartmentModel> departments,
+  }) {
     final theme = Theme.of(context);
-
-    final departments = _getRelatedDepartments();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'แผนกที่เกี่ยวข้อง',
+          title,
           style: theme.textTheme.titleMedium?.copyWith(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -474,80 +585,24 @@ class _SearchPageState extends State<SearchPage> {
           ),
         ),
         const SizedBox(height: 12),
-        if (_isLoadingDepartments)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 20),
-            child: Center(child: CircularProgressIndicator()),
-          )
-        else if (_departmentErrorMessage != null)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceColor,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE8ECF2)),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  _departmentErrorMessage!,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.textSecondaryColor,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextButton(
-                  onPressed: _loadDepartments,
-                  child: const Text('ลองใหม่'),
-                ),
-              ],
-            ),
-          )
-        else if (departments.isEmpty)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceColor,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE8ECF2)),
-            ),
-            child: Text(
-              'ไม่พบแผนกที่เกี่ยวข้อง',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: AppTheme.textSecondaryColor,
-              ),
-            ),
-          )
-        else
-          ...departments.map(
-            (department) => _buildDepartmentCard(
-              context,
-              title: department.name,
-              description: department.description ?? '',
-              icon: Icons.medical_services_rounded,
-              iconColor: AppTheme.primaryColor,
-              iconBackgroundColor: AppTheme.primaryBackgroundColor,
-              onTap: () => _openDoctorSelection(department.name),
-            ),
-          ),
+        ...departments.map(
+          (department) => _buildDepartmentCard(context, department: department),
+        ),
       ],
     );
   }
 
   Widget _buildDepartmentCard(
     BuildContext context, {
-    required IconData icon,
-    required Color iconBackgroundColor,
-    required Color iconColor,
-    required String title,
-    required String description,
-    required VoidCallback onTap,
+    required DepartmentModel department,
   }) {
     final theme = Theme.of(context);
+
+    final departmentColor = _getDepartmentColor(department.name);
+
+    final departmentBackgroundColor = _getDepartmentBackgroundColor(
+      department.name,
+    );
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -561,7 +616,7 @@ class _SearchPageState extends State<SearchPage> {
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: onTap,
+          onTap: () => _openDoctorSelection(department.name),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: Row(
@@ -570,10 +625,14 @@ class _SearchPageState extends State<SearchPage> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: iconBackgroundColor,
+                    color: departmentBackgroundColor,
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(icon, color: iconColor, size: 25),
+                  child: Icon(
+                    _getDepartmentIcon(department.name),
+                    color: departmentColor,
+                    size: 25,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -581,7 +640,7 @@ class _SearchPageState extends State<SearchPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        title,
+                        department.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodyMedium?.copyWith(
@@ -592,7 +651,7 @@ class _SearchPageState extends State<SearchPage> {
                       ),
                       const SizedBox(height: 5),
                       Text(
-                        description,
+                        department.description ?? '',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -605,15 +664,90 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Icon(
+                Icon(
                   Icons.chevron_right_rounded,
                   size: 22,
-                  color: AppTheme.textMutedColor,
+                  color: departmentColor,
                 ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildEmptySearchState(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE8ECF2)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              color: AppTheme.primaryBackgroundColor,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.search_off_rounded,
+              color: AppTheme.primaryColor,
+              size: 23,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'ไม่พบข้อมูลที่ตรงกับคำค้นหา',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppTheme.textPrimaryColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'ลองค้นหาด้วยชื่ออาการหรือชื่อแผนก',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppTheme.textSecondaryColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDepartmentErrorState(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE8ECF2)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            _departmentErrorMessage!,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppTheme.textSecondaryColor,
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextButton(onPressed: _loadDepartments, child: const Text('ลองใหม่')),
+        ],
       ),
     );
   }

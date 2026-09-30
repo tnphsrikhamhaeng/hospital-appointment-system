@@ -1,5 +1,6 @@
 enum NotificationType {
   appointmentConfirmed,
+  appointmentCheckedIn,
   reminder3Days,
   reminder1Day,
   reminder30Minutes,
@@ -7,7 +8,8 @@ enum NotificationType {
   consultationDelayed,
   appointmentCancelled,
   appointmentRescheduled,
-
+  medicalRecordCreated,
+  systemAnnouncement,
 }
 
 enum NotificationStatus {
@@ -18,7 +20,7 @@ enum NotificationStatus {
 
 class NotificationModel {
   final String id;
-  final String appointmentId;
+  final String? appointmentId;
   final String patientId;
   final NotificationType type;
   final NotificationStatus status;
@@ -46,7 +48,7 @@ class NotificationModel {
   ) {
     return NotificationModel(
       id: json['id'] as String,
-      appointmentId: json['appointment_id'] as String,
+      appointmentId: json['appointment_id'] as String?,
       patientId: json['patient_id'] as String,
       type: _parseType(
         json['notification_type'] as String,
@@ -91,6 +93,15 @@ class NotificationModel {
 
       case 'appointment_rescheduled':
         return NotificationType.appointmentRescheduled;
+
+      case 'medical_record_created':
+        return NotificationType.medicalRecordCreated;
+
+      case 'system_announcement':
+        return NotificationType.systemAnnouncement;
+
+      case 'appointment_checked_in':
+        return NotificationType.appointmentCheckedIn;
 
       default:
         throw ArgumentError(

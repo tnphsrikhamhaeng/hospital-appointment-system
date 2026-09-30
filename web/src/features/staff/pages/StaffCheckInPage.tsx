@@ -1,12 +1,10 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   staffCheckIn,
   staffCheckInPreview,
   type StaffCheckInPreviewResponse,
 } from "../../appointment/api/appointmentQrApi";
-import { logout } from "../../auth/api/authApi";
-import ChangePasswordModal from "../../profile/components/ChangePasswordModal";
+
 import "../../doctor/pages/DoctorPage.css";
 
 const checkInModalStyle = `
@@ -94,73 +92,30 @@ const checkInModalStyle = `
     }
   }
 `;
-const translateCheckInError = (
-  message?: string,
-): string => {
+const translateCheckInError = (message?: string): string => {
   if (!message) {
     return "ไม่สามารถตรวจสอบ QR Token ได้";
   }
 
   const errorMessages: Record<string, string> = {
-    "Appointment QR Code not found.":
-      "ไม่พบ QR Code ของการนัดหมาย",
-    "Appointment QR Code not found":
-      "ไม่พบ QR Code ของการนัดหมาย",
+    "Appointment QR Code not found.": "ไม่พบ QR Code ของการนัดหมาย",
+    "Appointment QR Code not found": "ไม่พบ QR Code ของการนัดหมาย",
   };
 
-  return (
-    errorMessages[message] ??
-    message
-  );
+  return errorMessages[message] ?? message;
 };
 function StaffCheckInPage() {
-  const navigate = useNavigate();
-
   const [token, setToken] = useState("");
-  const [isCheckingIn, setIsCheckingIn] =
-    useState(false);
+  const [isCheckingIn, setIsCheckingIn] = useState(false);
 
-  const [isPreviewing, setIsPreviewing] =
-    useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
 
   const [previewData, setPreviewData] =
-    useState<StaffCheckInPreviewResponse | null>(
-      null,
-    );
+    useState<StaffCheckInPreviewResponse | null>(null);
 
-  const [errorMessage, setErrorMessage] =
-    useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const [successMessage, setSuccessMessage] =
-    useState("");
-
-  const [isLogoutOpen, setIsLogoutOpen] =
-    useState(false);
-
-  const [isChangePasswordOpen, setIsChangePasswordOpen] =
-    useState(false);
-
-  const handleOpenLogout = () => {
-    setIsLogoutOpen(true);
-  };
-
-  const handleCloseLogout = () => {
-    setIsLogoutOpen(false);
-  };
-
-  const handleConfirmLogout = () => {
-    logout();
-    setIsLogoutOpen(false);
-    navigate("/login", { replace: true });
-  };
-
-  const handleOpenChangePassword = () => {
-    setIsChangePasswordOpen(true);
-  };
-
-  const handleCloseChangePassword = () => {
-    setIsChangePasswordOpen(false);
-  };
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleClosePreview = () => {
     if (isCheckingIn) {
@@ -170,9 +125,7 @@ function StaffCheckInPage() {
     setPreviewData(null);
   };
 
-  const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     setErrorMessage("");
@@ -186,18 +139,13 @@ function StaffCheckInPage() {
     setIsPreviewing(true);
 
     try {
-      const response =
-        await staffCheckInPreview({
-          token: token.trim(),
-        });
+      const response = await staffCheckInPreview({
+        token: token.trim(),
+      });
 
       setPreviewData(response);
     } catch (error: unknown) {
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "response" in error
-      ) {
+      if (typeof error === "object" && error !== null && "response" in error) {
         const response = (
           error as {
             response?: {
@@ -208,15 +156,9 @@ function StaffCheckInPage() {
           }
         ).response;
 
-          setErrorMessage(
-          translateCheckInError(
-            response?.data?.detail,
-          ),
-        );
+        setErrorMessage(translateCheckInError(response?.data?.detail));
       } else {
-        setErrorMessage(
-          "ไม่สามารถตรวจสอบ QR Token ได้",
-        );
+        setErrorMessage("ไม่สามารถตรวจสอบ QR Token ได้");
       }
     } finally {
       setIsPreviewing(false);
@@ -241,11 +183,7 @@ function StaffCheckInPage() {
       setToken("");
       setPreviewData(null);
     } catch (error: unknown) {
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "response" in error
-      ) {
+      if (typeof error === "object" && error !== null && "response" in error) {
         const response = (
           error as {
             response?: {
@@ -256,15 +194,9 @@ function StaffCheckInPage() {
           }
         ).response;
 
-        setErrorMessage(
-        translateCheckInError(
-          response?.data?.detail,
-        ),
-      );
+        setErrorMessage(translateCheckInError(response?.data?.detail));
       } else {
-        setErrorMessage(
-          "ไม่สามารถเช็คอินผู้ป่วยได้",
-        );
+        setErrorMessage("ไม่สามารถเช็คอินผู้ป่วยได้");
       }
     } finally {
       setIsCheckingIn(false);
@@ -279,9 +211,7 @@ function StaffCheckInPage() {
     }).format(new Date());
   };
 
-  const formatAppointmentDate = (
-    value: string,
-  ) => {
+  const formatAppointmentDate = (value: string) => {
     return new Intl.DateTimeFormat("th-TH", {
       day: "numeric",
       month: "long",
@@ -295,134 +225,7 @@ function StaffCheckInPage() {
 
   return (
     <main className="doctor-page">
-      <style>
-        {checkInModalStyle}
-      </style>
-
-      {/* =========================
-          Sidebar
-      ========================== */}
-      <aside className="doctor-sidebar">
-        <div className="sidebar-brand">
-          <img
-            src="/image/logo/LOGO.png"
-            alt="CareFlow"
-            className="sidebar-logo"
-          />
-
-          <div>
-            <strong>CareFlow</strong>
-
-            <span>
-              ระบบบริหารจัดการโรงพยาบาล
-            </span>
-          </div>
-        </div>
-
-        <div className="sidebar-role">
-          <span>ระบบสำหรับเจ้าหน้าที่</span>
-        </div>
-
-        <nav className="sidebar-nav">
-          <button
-            type="button"
-            className="sidebar-nav-item active"
-            onClick={() =>
-              navigate("/staff")
-            }
-          >
-            <span className="nav-icon">
-              ▣
-            </span>
-
-            <span>
-              เช็คอินผู้ป่วย
-            </span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-nav-item"
-            onClick={() =>
-              navigate("/staff/doctors")
-            }
-          >
-            <span className="nav-icon">
-              ⚕
-            </span>
-
-            <span>
-              จัดการแพทย์
-            </span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-nav-item"
-            onClick={() =>
-              navigate("/staff/create")
-            }
-          >
-            <span className="nav-icon">
-              ♙
-            </span>
-
-            <span>
-              จัดการเจ้าหน้าที่
-            </span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-nav-item"
-            onClick={() =>
-              navigate("/staff/departments")
-            }
-          >
-            <span className="nav-icon">
-              ▦
-            </span>
-
-            <span>
-              จัดการแผนก
-            </span>
-          </button>
-        </nav>
-
-        <div className="sidebar-bottom">
-          <button
-            type="button"
-            className="sidebar-bottom-item"
-            onClick={
-              handleOpenChangePassword
-            }
-          >
-            <span className="nav-icon">
-              ⚿
-            </span>
-
-            <span>
-              เปลี่ยนรหัสผ่าน
-            </span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-bottom-item logout-item"
-            onClick={
-              handleOpenLogout
-            }
-          >
-            <span className="nav-icon">
-              ↪
-            </span>
-
-            <span>
-              ออกจากระบบ
-            </span>
-          </button>
-        </div>
-      </aside>
+      <style>{checkInModalStyle}</style>
 
       {/* =========================
           Main Content
@@ -430,39 +233,26 @@ function StaffCheckInPage() {
       <section className="doctor-content">
         <header className="doctor-header">
           <div>
-            <span className="page-eyebrow">
-              CareFlow Hospital System
-            </span>
+            <span className="page-eyebrow">CareFlow Hospital System</span>
 
-            <h1>
-              เช็คอินผู้ป่วย
-            </h1>
+            <h1>เช็คอินผู้ป่วย</h1>
 
             <p>
-              รับ QR Code
-              เพื่อยืนยันการมาถึงของผู้ป่วย
-              และเช็คอินการนัดหมาย
+              รับ QR Code เพื่อยืนยันการมาถึงของผู้ป่วย และเช็คอินการนัดหมาย
             </p>
           </div>
 
           <div className="doctor-header-right">
             <div className="today-date">
-              <span>
-                วันนี้
-              </span>
+              <span>วันนี้</span>
 
-              <strong>
-                {formatThaiDate()}
-              </strong>
+              <strong>{formatThaiDate()}</strong>
             </div>
           </div>
         </header>
 
         {errorMessage && (
-          <div
-            className="doctor-alert"
-            role="alert"
-          >
+          <div className="doctor-alert" role="alert">
             {errorMessage}
           </div>
         )}
@@ -474,24 +264,29 @@ function StaffCheckInPage() {
           <div className="current-patient-card">
             <div className="current-patient-header">
               <div>
-                <span className="section-eyebrow">
-                  Patient Check-in
-                </span>
+                <span className="section-eyebrow">Patient Check-in</span>
 
-                <h2>
-                  ยืนยันการเช็คอินผู้ป่วย
-                </h2>
+                <h2>ยืนยันการเช็คอินผู้ป่วย</h2>
 
                 <p>
-                  กรุณากรอกรหัส QR Token
-                  ของการนัดหมาย
-                  เพื่อดูข้อมูลก่อนยืนยัน
+                  กรุณากรอกรหัส QR Token ของการนัดหมาย เพื่อดูข้อมูลก่อนยืนยัน
                   การเช็คอิน
                 </p>
               </div>
 
-              <span className="status-badge status-confirmed">
-                <span className="status-dot" />
+              <span
+                className="status-badge"
+                style={{
+                  background: "#FFF4D6",
+                  color: "#B77900",
+                }}
+              >
+                <span
+                  className="status-dot"
+                  style={{
+                    background: "#E5A900",
+                  }}
+                />
                 รอเช็คอิน
               </span>
             </div>
@@ -499,8 +294,7 @@ function StaffCheckInPage() {
             <form
               onSubmit={handleSubmit}
               style={{
-                padding:
-                  "22px 24px 24px",
+                padding: "22px 24px 24px",
               }}
             >
               <div
@@ -528,30 +322,23 @@ function StaffCheckInPage() {
                   type="text"
                   value={token}
                   onChange={(event) => {
-                    setToken(
-                      event.target.value,
-                    );
+                    setToken(event.target.value);
                     setErrorMessage("");
                     setSuccessMessage("");
                     setPreviewData(null);
                   }}
                   placeholder="เช่น CF-ABCD-23"
-                  disabled={
-                    isPreviewing ||
-                    isCheckingIn
-                  }
+                  disabled={isPreviewing || isCheckingIn}
                   autoComplete="off"
                   style={{
                     width: "100%",
                     height: "42px",
                     boxSizing: "border-box",
                     padding: "0 12px",
-                    border:
-                      "1px solid var(--border)",
+                    border: "1px solid var(--border)",
                     borderRadius: "7px",
                     outline: "none",
-                    background:
-                      "var(--surface)",
+                    background: "var(--surface)",
                     color: "var(--text)",
                     fontFamily: "var(--font)",
                     fontSize: "14px",
@@ -565,11 +352,9 @@ function StaffCheckInPage() {
                   style={{
                     margin: "14px 0 0",
                     padding: "10px 12px",
-                    border:
-                      "1px solid #c9e8d8",
+                    border: "1px solid #c9e8d8",
                     borderRadius: "7px",
-                    background:
-                      "var(--success-bg)",
+                    background: "var(--success-bg)",
                     color: "var(--success)",
                     fontSize: "13px",
                     lineHeight: "1.5",
@@ -583,25 +368,19 @@ function StaffCheckInPage() {
               <div
                 className="doctor-modal-actions"
                 style={{
-                  justifyContent:
-                    "flex-start",
+                  justifyContent: "flex-start",
                   marginTop: "18px",
                 }}
               >
                 <button
                   type="submit"
                   className="action-button primary"
-                  disabled={
-                    isPreviewing ||
-                    isCheckingIn
-                  }
+                  disabled={isPreviewing || isCheckingIn}
                   style={{
                     fontWeight: 400,
                   }}
                 >
-                  {isPreviewing
-                    ? "กำลังตรวจสอบ..."
-                    : "ตรวจสอบ QR"}
+                  {isPreviewing ? "กำลังตรวจสอบ..." : "ตรวจสอบ QR"}
                 </button>
               </div>
             </form>
@@ -623,33 +402,22 @@ function StaffCheckInPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="check-in-modal-title"
-            onClick={(event) =>
-              event.stopPropagation()
-            }
+            onClick={(event) => event.stopPropagation()}
             style={{
               width: "calc(100% - 32px)",
               maxWidth: "520px",
               fontWeight: 400,
             }}
           >
-            <div className="doctor-modal-icon warning">
-              ✓
-            </div>
+            <div className="doctor-modal-icon warning">✓</div>
 
-            <h2 id="check-in-modal-title">
-              ยืนยันการเช็คอิน
-            </h2>
+            <h2 id="check-in-modal-title">ยืนยันการเช็คอิน</h2>
 
-            <p>
-              กรุณาตรวจสอบข้อมูล
-              ก่อนยืนยันการเช็คอินผู้ป่วย
-            </p>
+            <p>กรุณาตรวจสอบข้อมูล ก่อนยืนยันการเช็คอินผู้ป่วย</p>
 
             <div className="check-in-modal-data">
               <div className="check-in-modal-data-item full-width">
-                <span className="check-in-modal-data-label">
-                  ผู้ป่วย
-                </span>
+                <span className="check-in-modal-data-label">ผู้ป่วย</span>
 
                 <span className="check-in-modal-data-value patient-name">
                   {previewData.patient_name}
@@ -657,38 +425,24 @@ function StaffCheckInPage() {
               </div>
 
               <div className="check-in-modal-data-item">
-                <span className="check-in-modal-data-label">
-                  วันที่นัดหมาย
-                </span>
+                <span className="check-in-modal-data-label">วันที่นัดหมาย</span>
 
                 <span className="check-in-modal-data-value">
-                  {formatAppointmentDate(
-                    previewData.appointment_date,
-                  )}
+                  {formatAppointmentDate(previewData.appointment_date)}
                 </span>
               </div>
 
               <div className="check-in-modal-data-item">
-                <span className="check-in-modal-data-label">
-                  เวลานัดหมาย
-                </span>
+                <span className="check-in-modal-data-label">เวลานัดหมาย</span>
 
                 <span className="check-in-modal-data-value">
-                  {formatTime(
-                    previewData.start_time,
-                  )}{" "}
-                  -{" "}
-                  {formatTime(
-                    previewData.end_time,
-                  )}{" "}
-                  น.
+                  {formatTime(previewData.start_time)} -{" "}
+                  {formatTime(previewData.end_time)} น.
                 </span>
               </div>
 
               <div className="check-in-modal-data-item">
-                <span className="check-in-modal-data-label">
-                  แพทย์
-                </span>
+                <span className="check-in-modal-data-label">แพทย์</span>
 
                 <span className="check-in-modal-data-value">
                   {previewData.doctor_name}
@@ -696,9 +450,7 @@ function StaffCheckInPage() {
               </div>
 
               <div className="check-in-modal-data-item">
-                <span className="check-in-modal-data-label">
-                  แผนก
-                </span>
+                <span className="check-in-modal-data-label">แผนก</span>
 
                 <span className="check-in-modal-data-value">
                   {previewData.department_name}
@@ -710,22 +462,16 @@ function StaffCheckInPage() {
               <button
                 type="button"
                 className="action-button primary"
-                onClick={
-                  handleConfirmCheckIn
-                }
+                onClick={handleConfirmCheckIn}
                 disabled={isCheckingIn}
               >
-                {isCheckingIn
-                  ? "กำลัง Check-in..."
-                  : "ยืนยัน Check-in"}
+                {isCheckingIn ? "กำลัง Check-in..." : "ยืนยัน Check-in"}
               </button>
 
               <button
                 type="button"
                 className="action-button secondary"
-                onClick={
-                  handleClosePreview
-                }
+                onClick={handleClosePreview}
                 disabled={isCheckingIn}
               >
                 ยกเลิก
@@ -734,73 +480,6 @@ function StaffCheckInPage() {
           </div>
         </div>
       )}
-
-      {/* =========================
-          Logout Confirmation Modal
-      ========================== */}
-      {isLogoutOpen && (
-        <div
-          className="doctor-modal-overlay"
-          role="presentation"
-          onClick={handleCloseLogout}
-        >
-          <div
-            className="doctor-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="logout-modal-title"
-            onClick={(event) =>
-              event.stopPropagation()
-            }
-          >
-            <div className="doctor-modal-icon warning">
-              ↪
-            </div>
-
-            <h2 id="logout-modal-title">
-              ยืนยันการออกจากระบบ
-            </h2>
-
-            <p>
-              คุณต้องการออกจากระบบใช่หรือไม่?
-            </p>
-
-            <div className="doctor-modal-actions">
-              <button
-                type="button"
-                className="action-button secondary"
-                onClick={
-                  handleCloseLogout
-                }
-              >
-                ยกเลิก
-              </button>
-
-              <button
-                type="button"
-                className="action-button danger"
-                onClick={
-                  handleConfirmLogout
-                }
-              >
-                ยืนยัน
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =========================
-          Change Password Modal
-      ========================== */}
-      <ChangePasswordModal
-        isOpen={
-          isChangePasswordOpen
-        }
-        onClose={
-          handleCloseChangePassword
-        }
-      />
     </main>
   );
 }

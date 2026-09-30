@@ -10,10 +10,7 @@ import 'doctor_schedule_page.dart';
 class DoctorProfilePage extends StatefulWidget {
   final DoctorModel doctor;
 
-  const DoctorProfilePage({
-    super.key,
-    required this.doctor,
-  });
+  const DoctorProfilePage({super.key, required this.doctor});
 
   @override
   State<DoctorProfilePage> createState() => _DoctorProfilePageState();
@@ -31,9 +28,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
     super.initState();
 
     _doctorRepository = DoctorRepository(
-      doctorApiService: DoctorApiService(
-        apiClient: ApiClient(),
-      ),
+      doctorApiService: DoctorApiService(apiClient: ApiClient()),
     );
 
     _loadDoctor();
@@ -110,13 +105,11 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
       return Icons.psychology_rounded;
     }
 
-    if (value.contains('ทางเดินอาหาร') ||
-        value.contains('gastro')) {
+    if (value.contains('ทางเดินอาหาร') || value.contains('gastro')) {
       return Icons.restaurant_rounded;
     }
 
-    if (value.contains('อายุร') ||
-        value.contains('internal')) {
+    if (value.contains('อายุร') || value.contains('internal')) {
       return Icons.medical_services_rounded;
     }
 
@@ -130,8 +123,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
       return AppTheme.errorColor;
     }
 
-    if (value.contains('ทางเดินอาหาร') ||
-        value.contains('gastro')) {
+    if (value.contains('ทางเดินอาหาร') || value.contains('gastro')) {
       return AppTheme.warningColor;
     }
 
@@ -151,8 +143,18 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
       return trimmedUrl;
     }
 
-    if (uri.host == 'localhost' || uri.host == '127.0.0.1') {
-      return uri.replace(host: '10.0.2.2').toString();
+    final baseUri = Uri.parse(ApiClient.baseUrl);
+
+    if (uri.host == 'localhost' ||
+        uri.host == '127.0.0.1' ||
+        uri.host == '10.0.2.2') {
+      return uri
+          .replace(
+            scheme: baseUri.scheme,
+            host: baseUri.host,
+            port: baseUri.hasPort ? baseUri.port : null,
+          )
+          .toString();
     }
 
     return trimmedUrl;
@@ -177,32 +179,24 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
         title: Text(
           'โปรไฟล์แพทย์',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimaryColor,
-              ),
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimaryColor,
+          ),
         ),
         centerTitle: true,
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
-          child: Divider(
-            height: 1,
-            thickness: 1,
-            color: Color(0xFFE8ECF2),
-          ),
+          child: Divider(height: 1, thickness: 1, color: Color(0xFFE8ECF2)),
         ),
       ),
-      body: SafeArea(
-        child: _buildBody(context),
-      ),
+      body: SafeArea(child: _buildBody(context)),
     );
   }
 
   Widget _buildBody(BuildContext context) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_errorMessage != null) {
@@ -216,72 +210,40 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(
-        20,
-        20,
-        20,
-        32,
-      ),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildDoctorIdentity(
-            context,
-            doctor,
-          ),
+          _buildDoctorIdentity(context, doctor),
           const SizedBox(height: 24),
-          _buildAboutSection(
-            context,
-            doctor,
-          ),
+          _buildAboutSection(context, doctor),
           const SizedBox(height: 24),
-          _buildExpertiseSection(
-            context,
-            doctor,
-          ),
+          _buildExpertiseSection(context, doctor),
           const SizedBox(height: 24),
-          _buildDepartmentSection(
-            context,
-            doctor,
-          ),
+          _buildDepartmentSection(context, doctor),
           const SizedBox(height: 24),
-          _buildScheduleButton(
-            context,
-            doctor,
-          ),
+          _buildScheduleButton(context, doctor),
         ],
       ),
     );
   }
 
-  Widget _buildDoctorIdentity(
-    BuildContext context,
-    DoctorModel doctor,
-  ) {
+  Widget _buildDoctorIdentity(BuildContext context, DoctorModel doctor) {
     final theme = Theme.of(context);
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
-        20,
-        26,
-        20,
-        28,
-      ),
+      padding: const EdgeInsets.fromLTRB(20, 26, 20, 28),
       decoration: BoxDecoration(
         color: AppTheme.primaryBackgroundColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.primaryColor.withValues(
-            alpha: 0.08,
-          ),
+          color: AppTheme.primaryColor.withValues(alpha: 0.08),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withValues(
-              alpha: 0.06,
-            ),
+            color: AppTheme.primaryColor.withValues(alpha: 0.06),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -334,9 +296,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
         color: AppTheme.surfaceColor,
         shape: BoxShape.circle,
         border: Border.all(
-          color: AppTheme.primaryColor.withValues(
-            alpha: 0.10,
-          ),
+          color: AppTheme.primaryColor.withValues(alpha: 0.10),
           width: 1,
         ),
       ),
@@ -350,11 +310,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
           : Image.network(
               imageUrl,
               fit: BoxFit.cover,
-              errorBuilder: (
-                context,
-                error,
-                stackTrace,
-              ) {
+              errorBuilder: (context, error, stackTrace) {
                 return const Icon(
                   Icons.person_rounded,
                   color: AppTheme.primaryColor,
@@ -365,14 +321,10 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
     );
   }
 
-  Widget _buildAboutSection(
-    BuildContext context,
-    DoctorModel doctor,
-  ) {
+  Widget _buildAboutSection(BuildContext context, DoctorModel doctor) {
     final theme = Theme.of(context);
 
-    final departmentDescription =
-        doctor.department.description?.trim() ?? '';
+    final departmentDescription = doctor.department.description?.trim() ?? '';
 
     final description = departmentDescription.isEmpty
         ? 'ให้บริการตรวจและดูแลรักษาผู้ป่วยตามความเชี่ยวชาญของแพทย์'
@@ -402,10 +354,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
     );
   }
 
-  Widget _buildExpertiseSection(
-    BuildContext context,
-    DoctorModel doctor,
-  ) {
+  Widget _buildExpertiseSection(BuildContext context, DoctorModel doctor) {
     final theme = Theme.of(context);
     final expertise = _getExpertise(doctor);
 
@@ -428,24 +377,15 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
             final color = _getExpertiseColor(item);
 
             return Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 7,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
               decoration: BoxDecoration(
-                color: color.withValues(
-                  alpha: 0.10,
-                ),
+                color: color.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    _getExpertiseIcon(item),
-                    size: 14,
-                    color: color,
-                  ),
+                  Icon(_getExpertiseIcon(item), size: 14, color: color),
                   const SizedBox(width: 5),
                   Text(
                     item,
@@ -464,10 +404,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
     );
   }
 
-  Widget _buildDepartmentSection(
-    BuildContext context,
-    DoctorModel doctor,
-  ) {
+  Widget _buildDepartmentSection(BuildContext context, DoctorModel doctor) {
     final theme = Theme.of(context);
 
     return Container(
@@ -476,10 +413,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE8ECF2),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFE8ECF2), width: 1),
       ),
       child: Row(
         children: [
@@ -525,19 +459,14 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
     );
   }
 
-  Widget _buildScheduleButton(
-    BuildContext context,
-    DoctorModel doctor,
-  ) {
+  Widget _buildScheduleButton(BuildContext context, DoctorModel doctor) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => DoctorSchedulePage(
-                doctor: doctor,
-              ),
+              builder: (_) => DoctorSchedulePage(doctor: doctor),
             ),
           );
         },
@@ -545,9 +474,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
           backgroundColor: AppTheme.primaryColor,
           foregroundColor: Colors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(
-            vertical: 14,
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -558,10 +485,10 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
             Text(
               'ดูตารางนัดหมาย',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
             ),
             const SizedBox(width: 6),
             const Icon(
@@ -580,9 +507,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 24,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

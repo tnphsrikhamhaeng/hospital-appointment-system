@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from app.models.appointment import Appointment
     from app.models.doctor import Doctor
-    from app.models.user_device import UserDevice
     from app.models.medical_record import MedicalRecord
 
 from app.core.database import Base
@@ -105,11 +104,6 @@ class User(Base):
     back_populates="patient",
     )
     
-    devices: Mapped[list["UserDevice"]] = relationship(
-        "UserDevice",
-        back_populates="user",
-        cascade="all, delete-orphan",
-    )
     
     medical_records: Mapped[list["MedicalRecord"]] = relationship(
         "MedicalRecord",

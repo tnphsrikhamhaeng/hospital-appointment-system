@@ -7,6 +7,8 @@
   margin-left: 250px;
   min-height: 100vh;
   padding: 32px 36px 48px;
+  flex: 1;
+  min-width: 0;
 }
 
 .doctor-history-header {
@@ -462,7 +464,6 @@
 
 @media (max-width: 680px) {
   .doctor-history-content {
-    margin-left: 0;
     padding: 24px 16px 32px;
   }
 
@@ -509,5 +510,20 @@
     justify-content: center;
     gap: 4px;
     padding: 10px 16px;
+  }
+}
+
+.loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: history-spin 0.8s linear infinite;
+}
+
+@keyframes history-spin {
+  to {
+    transform: rotate(360deg);
   }
 }

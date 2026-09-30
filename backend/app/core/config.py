@@ -8,7 +8,9 @@ class Settings(BaseSettings):
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
 
-    FIREBASE_CREDENTIALS_PATH: str
+
+    ONESIGNAL_APP_ID: str
+    ONESIGNAL_API_KEY: str
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -50,7 +50,7 @@ export const getMySchedule = async (
 
 export interface UpdateAppointmentStatusRequest {
   status: string;
-  room_number: string;
+  room_number?: string;
 }
 
 export const updateAppointmentStatus = async (
@@ -85,6 +85,16 @@ export const getAppointmentPatient = async (
 ): Promise<AppointmentPatient> => {
   const response = await api.get<AppointmentPatient>(
     `/appointments/${appointmentId}/patient`,
+  );
+
+  return response.data;
+};
+
+export const createConsultationDelayedNotification = async (
+  appointmentId: string,
+) => {
+  const response = await api.post(
+    `/notifications/appointments/${appointmentId}/consultation-delayed`,
   );
 
   return response.data;

@@ -1,8 +1,14 @@
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+
+from app.core.scheduler import (
+    start_scheduler,
+    stop_scheduler,
+)
 
 from app.routers import (
     auth,
@@ -21,18 +27,27 @@ from app.routers import (
     notification_setting,
     reactivate,
     upload,
-    user_device,
 )
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    start_scheduler()
 
-app = FastAPI()
+    try:
+        yield
+    finally:
+        stop_scheduler()
+        
+app = FastAPI(
+    lifespan=lifespan,
+)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:5174",
+    "http://localhost:5173",
+    "http://127.0.0.1:8000/",
+    "http://localhost:5174",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -67,8 +82,6 @@ app.include_router(password_reset.router)
 app.include_router(notification.router)
 
 app.include_router(notification_setting.router)
-
-app.include_router(user_device.router)
 
 app.include_router(reactivate.router)
 

@@ -1,5 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
+
 import {
   CalendarDays,
   Trash2,
@@ -16,7 +25,7 @@ import {
 
 import { getDoctorById } from "../../doctor/api/doctorApi";
 
-import ChangePasswordModal from "../../profile/components/ChangePasswordModal";
+
 
 import "../../doctor/pages/DoctorPage.css";
 
@@ -158,13 +167,6 @@ const StaffDoctorSchedulePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  /* =========================
-     Change Password
-  ========================== */
-  const [
-    isChangePasswordOpen,
-    setIsChangePasswordOpen,
-  ] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
 
@@ -409,132 +411,9 @@ const StaffDoctorSchedulePage = () => {
   };
 
   return (
-    <div className="doctor-page">
-      {/* =========================
-          Sidebar
-      ========================== */}
-      <aside className="doctor-sidebar">
-        <div className="sidebar-brand">
-          <img
-            src="/image/logo/LOGO.png"
-            alt="CareFlow"
-            className="sidebar-logo"
-          />
-
-          <div>
-            <strong>CareFlow</strong>
-
-            <span>
-              ระบบบริหารจัดการโรงพยาบาล
-            </span>
-          </div>
-        </div>
-
-        <div className="sidebar-role">
-          <span>
-            ระบบสำหรับเจ้าหน้าที่
-          </span>
-        </div>
-
-        <nav className="sidebar-nav">
-          <button
-            type="button"
-            className="sidebar-nav-item"
-            onClick={() =>
-              navigate("/staff")
-            }
-          >
-            <span className="nav-icon">
-              ▣
-            </span>
-
-            <span>เช็คอินผู้ป่วย</span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-nav-item active"
-            onClick={() =>
-              navigate("/staff/doctors")
-            }
-          >
-            <span className="nav-icon">
-              ⚕
-            </span>
-
-            <span>จัดการแพทย์</span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-nav-item"
-            onClick={() =>
-              navigate("/staff")
-            }
-          >
-            <span className="nav-icon">
-              ♙
-            </span>
-
-            <span>จัดการ Staff</span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-nav-item"
-            onClick={() =>
-              navigate(
-                "/staff/departments",
-              )
-            }
-          >
-            <span className="nav-icon">
-              ▦
-            </span>
-
-            <span>จัดการแผนก</span>
-          </button>
-        </nav>
-
-        <div className="sidebar-bottom">
-          <button
-            type="button"
-            className="sidebar-bottom-item"
-            onClick={() =>
-              setIsChangePasswordOpen(
-                true,
-              )
-            }
-          >
-            <span className="nav-icon">
-              ⚿
-            </span>
-
-            <span>
-              เปลี่ยนรหัสผ่าน
-            </span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-bottom-item logout-item"
-            onClick={() =>
-              navigate("/login")
-            }
-          >
-            <span className="nav-icon">
-              ↪
-            </span>
-
-            <span>ออกจากระบบ</span>
-          </button>
-        </div>
-      </aside>
-
-      {/* =========================
-          Main Content
-      ========================== */}
-      <main className="doctor-content">
+    
+     <>
+    <main className="doctor-content">
         <header className="doctor-header">
           <div>
             <span className="page-eyebrow">
@@ -764,20 +643,7 @@ const StaffDoctorSchedulePage = () => {
         </section>
       </main>
 
-      {/* =========================
-          Change Password Modal
-      ========================== */}
-      <ChangePasswordModal
-        isOpen={
-          isChangePasswordOpen
-        }
-        onClose={() =>
-          setIsChangePasswordOpen(
-            false,
-          )
-        }
-      />
-
+  
       {/* =========================
           Add / Edit Schedule Modal
       ========================== */}
@@ -1137,7 +1003,7 @@ const StaffDoctorSchedulePage = () => {
             </div>
           </div>
         )}
-    </div>
+    </>
   );
 };
 

@@ -5,7 +5,11 @@ from datetime import date
 
 from sqlalchemy.orm import Session
 
-from app.core.enums import AppointmentStatusEnum
+from app.core.enums import (
+    AppointmentStatusEnum,
+    NotificationTypeEnum,
+)
+from app.services.notification_service import NotificationService
 from app.core.exceptions import (
     ConflictException,
     ForbiddenException,
@@ -36,6 +40,7 @@ class MedicalRecordService:
         self.appointment_repository = (
             AppointmentRepository(db)
         )
+        self.notification_service = NotificationService(db)
 
     def create_medical_record(
         self,
@@ -85,6 +90,19 @@ class MedicalRecordService:
 
         self.appointment_repository.update(
             appointment
+        )
+        
+        self.notification_service.create_notification(
+            appointment_id=appointment.id,
+            patient_id=appointment.patient_id,
+            notification_type=(
+                NotificationTypeEnum.MEDICAL_RECORD_CREATED
+            ),
+            title="ผลการรักษาพร้อมแล้ว",
+            body=(
+                "แพทย์ได้บันทึกผลการรักษาของคุณแล้ว "
+                "สามารถเข้าไปดูรายละเอียดได้ที่หน้าประวัติการรักษา"
+            ),
         )
 
         self.db.commit()

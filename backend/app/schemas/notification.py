@@ -13,19 +13,14 @@ from app.core.enums import (
 
 class NotificationResponse(BaseModel):
     id: uuid.UUID
-
-    appointment_id: uuid.UUID
+    appointment_id: uuid.UUID | None
     patient_id: uuid.UUID
-
     notification_type: NotificationTypeEnum
     notification_status: NotificationStatusEnum
-
     title: str
     body: str
-
     sent_at: datetime | None
     read_at: datetime | None
-
     created_at: datetime
 
     model_config = ConfigDict(

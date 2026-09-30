@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 import {
   createDepartment,
@@ -19,9 +18,6 @@ import {
   updateSpecialization,
   type SpecializationResponse,
 } from "../api/specializationApi";
-
-import { logout } from "../../auth/api/authApi";
-import ChangePasswordModal from "../../profile/components/ChangePasswordModal";
 
 import "../../doctor/pages/DoctorPage.css";
 
@@ -71,11 +67,7 @@ type ModalType =
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
 const DepartmentManagementPage = () => {
-  const navigate = useNavigate();
-
-  const [departments, setDepartments] = useState<
-    DepartmentResponse[]
-  >([]);
+  const [departments, setDepartments] = useState<DepartmentResponse[]>([]);
 
   const [specializations, setSpecializations] = useState<
     SpecializationResponse[]
@@ -83,6 +75,10 @@ const DepartmentManagementPage = () => {
 
   const [search, setSearch] = useState("");
   const [showInactive, setShowInactive] = useState(false);
+
+  const [expandedDepartments, setExpandedDepartments] = useState<
+    Record<string, boolean>
+  >({});
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -96,68 +92,51 @@ const DepartmentManagementPage = () => {
     useState<SpecializationResponse | null>(null);
 
   const [departmentName, setDepartmentName] = useState("");
-  const [departmentDescription, setDepartmentDescription] =
-    useState("");
-  const [departmentImageUrl, setDepartmentImageUrl] =
-    useState("");
-  const [departmentImageFile, setDepartmentImageFile] =
-    useState<File | null>(null);
-  const [departmentImagePreview, setDepartmentImagePreview] =
-    useState("");
+  const [departmentDescription, setDepartmentDescription] = useState("");
+  const [departmentImageUrl, setDepartmentImageUrl] = useState("");
+  const [departmentImageFile, setDepartmentImageFile] = useState<File | null>(
+    null,
+  );
+  const [departmentImagePreview, setDepartmentImagePreview] = useState("");
   const [slotDuration, setSlotDuration] = useState("30");
 
-  const [specializationName, setSpecializationName] =
-    useState("");
+  const [specializationName, setSpecializationName] = useState("");
   const [specializationDescription, setSpecializationDescription] =
     useState("");
   const [specializationDepartmentId, setSpecializationDepartmentId] =
     useState("");
 
   const [password, setPassword] = useState("");
-  const [specializationToAddId, setSpecializationToAddId] =
-    useState("");
+  const [specializationToAddId, setSpecializationToAddId] = useState("");
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState("");
-
-  const [isChangePasswordOpen, setIsChangePasswordOpen] =
-    useState(false);
 
   // =========================================================
   // Load data
   // =========================================================
 
-  const loadData = async (
-    searchValue = "",
-    inactive = false,
-  ) => {
+  const loadData = async (searchValue = "", inactive = false) => {
     try {
       setLoading(true);
       setError("");
 
       const status = inactive ? "inactive" : "active";
 
-      const [departmentData, specializationData] =
-        await Promise.all([
-          getDepartments({
-            ...(searchValue.trim()
-              ? { search: searchValue.trim() }
-              : {}),
-            status,
-          }),
-          getSpecializations({
-            ...(searchValue.trim()
-              ? { search: searchValue.trim() }
-              : {}),
-            status,
-          }),
-        ]);
+      const [departmentData, specializationData] = await Promise.all([
+        getDepartments({
+          ...(searchValue.trim() ? { search: searchValue.trim() } : {}),
+          status,
+        }),
+        getSpecializations({
+          ...(searchValue.trim() ? { search: searchValue.trim() } : {}),
+          status,
+        }),
+      ]);
 
       setDepartments(departmentData);
       setSpecializations(specializationData);
     } catch {
-      setError(
-        "ไม่สามารถโหลดข้อมูลแผนกและความเชี่ยวชาญได้",
-      );
+      setError("ไม่สามารถโหลดข้อมูลแผนกและความเชี่ยวชาญได้");
     } finally {
       setLoading(false);
     }
@@ -181,32 +160,30 @@ const DepartmentManagementPage = () => {
     return departments.filter((department) => {
       const departmentMatch =
         department.name.toLowerCase().includes(keyword) ||
-        (department.description ?? "")
-          .toLowerCase()
-          .includes(keyword);
+        (department.description ?? "").toLowerCase().includes(keyword);
 
       const specializationMatch = specializations.some(
         (specialization) =>
           specialization.department_id === department.id &&
-          (specialization.name
-            .toLowerCase()
-            .includes(keyword) ||
-            (specialization.description ?? "")
-              .toLowerCase()
-              .includes(keyword)),
+          (specialization.name.toLowerCase().includes(keyword) ||
+            (specialization.description ?? "").toLowerCase().includes(keyword)),
       );
 
       return departmentMatch || specializationMatch;
     });
   }, [departments, specializations, search]);
 
-  const getDepartmentSpecializations = (
-    departmentId: string,
-  ) => {
+  const getDepartmentSpecializations = (departmentId: string) => {
     return specializations.filter(
-      (specialization) =>
-        specialization.department_id === departmentId,
+      (specialization) => specialization.department_id === departmentId,
     );
+  };
+
+  const toggleDepartmentSpecializations = (departmentId: string) => {
+    setExpandedDepartments((current) => ({
+      ...current,
+      [departmentId]: !current[departmentId],
+    }));
   };
 
   // =========================================================
@@ -224,25 +201,17 @@ const DepartmentManagementPage = () => {
 
     setActionError("");
 
-    const allowedTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-    ];
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
     if (!allowedTypes.includes(file.type)) {
-      setActionError(
-        "รองรับเฉพาะไฟล์ JPG, PNG และ WEBP",
-      );
+      setActionError("รองรับเฉพาะไฟล์ JPG, PNG และ WEBP");
 
       event.target.value = "";
       return;
     }
 
     if (file.size > MAX_IMAGE_SIZE) {
-      setActionError(
-        "ขนาดรูปภาพต้องไม่เกิน 5 MB",
-      );
+      setActionError("ขนาดรูปภาพต้องไม่เกิน 5 MB");
 
       event.target.value = "";
       return;
@@ -305,9 +274,7 @@ const DepartmentManagementPage = () => {
     setModal("create-department");
   };
 
-  const handleOpenEditDepartment = (
-    department: DepartmentResponse,
-  ) => {
+  const handleOpenEditDepartment = (department: DepartmentResponse) => {
     if (department.status === "inactive") {
       return;
     }
@@ -315,17 +282,11 @@ const DepartmentManagementPage = () => {
     setSelectedDepartment(department);
 
     setDepartmentName(department.name);
-    setDepartmentDescription(
-      department.description ?? "",
-    );
-    setDepartmentImageUrl(
-      department.image_url ?? "",
-    );
+    setDepartmentDescription(department.description ?? "");
+    setDepartmentImageUrl(department.image_url ?? "");
     setDepartmentImageFile(null);
     setDepartmentImagePreview("");
-    setSlotDuration(
-      String(department.slot_duration_minutes),
-    );
+    setSlotDuration(String(department.slot_duration_minutes));
 
     setActionError("");
     setModal("edit-department");
@@ -340,9 +301,7 @@ const DepartmentManagementPage = () => {
     const duration = Number(slotDuration);
 
     if (!Number.isInteger(duration) || duration <= 0) {
-      setActionError(
-        "ระยะเวลานัดหมายต้องเป็นจำนวนเต็มมากกว่า 0",
-      );
+      setActionError("ระยะเวลานัดหมายต้องเป็นจำนวนเต็มมากกว่า 0");
       return;
     }
 
@@ -353,18 +312,14 @@ const DepartmentManagementPage = () => {
       let imageUrl = departmentImageUrl.trim() || null;
 
       if (departmentImageFile) {
-        const uploadResponse =
-          await uploadDepartmentImage(
-            departmentImageFile,
-          );
+        const uploadResponse = await uploadDepartmentImage(departmentImageFile);
 
         imageUrl = uploadResponse.image_url;
       }
 
       await createDepartment({
         name: departmentName.trim(),
-        description:
-          departmentDescription.trim() || null,
+        description: departmentDescription.trim() || null,
         image_url: imageUrl,
         slot_duration_minutes: duration,
       });
@@ -374,9 +329,7 @@ const DepartmentManagementPage = () => {
       setSaving(false);
       finishModal();
     } catch {
-      setActionError(
-        "ไม่สามารถเพิ่มแผนกหรืออัปโหลดรูปภาพได้",
-      );
+      setActionError("ไม่สามารถเพิ่มแผนกหรืออัปโหลดรูปภาพได้");
       setSaving(false);
     }
   };
@@ -394,9 +347,7 @@ const DepartmentManagementPage = () => {
     const duration = Number(slotDuration);
 
     if (!Number.isInteger(duration) || duration <= 0) {
-      setActionError(
-        "ระยะเวลานัดหมายต้องเป็นจำนวนเต็มมากกว่า 0",
-      );
+      setActionError("ระยะเวลานัดหมายต้องเป็นจำนวนเต็มมากกว่า 0");
       return;
     }
 
@@ -407,18 +358,14 @@ const DepartmentManagementPage = () => {
       let imageUrl = departmentImageUrl.trim() || null;
 
       if (departmentImageFile) {
-        const uploadResponse =
-          await uploadDepartmentImage(
-            departmentImageFile,
-          );
+        const uploadResponse = await uploadDepartmentImage(departmentImageFile);
 
         imageUrl = uploadResponse.image_url;
       }
 
       await updateDepartment(selectedDepartment.id, {
         name: departmentName.trim(),
-        description:
-          departmentDescription.trim() || null,
+        description: departmentDescription.trim() || null,
         image_url: imageUrl,
         slot_duration_minutes: duration,
       });
@@ -428,16 +375,12 @@ const DepartmentManagementPage = () => {
       setSaving(false);
       finishModal();
     } catch {
-      setActionError(
-        "ไม่สามารถแก้ไขแผนกหรืออัปโหลดรูปภาพได้",
-      );
+      setActionError("ไม่สามารถแก้ไขแผนกหรืออัปโหลดรูปภาพได้");
       setSaving(false);
     }
   };
 
-  const handleDeleteDepartment = (
-    department: DepartmentResponse,
-  ) => {
+  const handleDeleteDepartment = (department: DepartmentResponse) => {
     if (department.status === "inactive") {
       return;
     }
@@ -462,26 +405,19 @@ const DepartmentManagementPage = () => {
       setSaving(true);
       setActionError("");
 
-      await deleteDepartment(
-        selectedDepartment.id,
-        password,
-      );
+      await deleteDepartment(selectedDepartment.id, password);
 
       await loadData(search, showInactive);
 
       setSaving(false);
       finishModal();
     } catch {
-      setActionError(
-        "รหัสผ่านไม่ถูกต้อง หรือไม่สามารถปิดใช้งานแผนกได้",
-      );
+      setActionError("รหัสผ่านไม่ถูกต้อง หรือไม่สามารถปิดใช้งานแผนกได้");
       setSaving(false);
     }
   };
 
-  const handleOpenReactivateDepartment = (
-    department: DepartmentResponse,
-  ) => {
+  const handleOpenReactivateDepartment = (department: DepartmentResponse) => {
     if (department.status !== "inactive") {
       return;
     }
@@ -507,19 +443,14 @@ const DepartmentManagementPage = () => {
       setSaving(true);
       setActionError("");
 
-      await reactivateDepartment(
-        selectedDepartment.id,
-        password,
-      );
+      await reactivateDepartment(selectedDepartment.id, password);
 
       await loadData(search, showInactive);
 
       setSaving(false);
       finishModal();
     } catch {
-      setActionError(
-        "รหัสผ่านไม่ถูกต้อง หรือไม่สามารถเปิดใช้งานแผนกได้",
-      );
+      setActionError("รหัสผ่านไม่ถูกต้อง หรือไม่สามารถเปิดใช้งานแผนกได้");
       setSaving(false);
     }
   };
@@ -543,12 +474,8 @@ const DepartmentManagementPage = () => {
     setSelectedSpecialization(specialization);
 
     setSpecializationName(specialization.name);
-    setSpecializationDescription(
-      specialization.description ?? "",
-    );
-    setSpecializationDepartmentId(
-      specialization.department_id,
-    );
+    setSpecializationDescription(specialization.description ?? "");
+    setSpecializationDepartmentId(specialization.department_id);
 
     setActionError("");
     setModal("edit-specialization");
@@ -561,9 +488,7 @@ const DepartmentManagementPage = () => {
     }
 
     if (!specializationName.trim()) {
-      setActionError(
-        "กรุณากรอกชื่อความเชี่ยวชาญ",
-      );
+      setActionError("กรุณากรอกชื่อความเชี่ยวชาญ");
       return;
     }
 
@@ -573,8 +498,7 @@ const DepartmentManagementPage = () => {
 
       await createSpecialization({
         name: specializationName.trim(),
-        description:
-          specializationDescription.trim() || null,
+        description: specializationDescription.trim() || null,
         department_id: specializationDepartmentId,
       });
 
@@ -583,9 +507,7 @@ const DepartmentManagementPage = () => {
       setSaving(false);
       finishModal();
     } catch {
-      setActionError(
-        "ไม่สามารถเพิ่มความเชี่ยวชาญได้",
-      );
+      setActionError("ไม่สามารถเพิ่มความเชี่ยวชาญได้");
       setSaving(false);
     }
   };
@@ -601,9 +523,7 @@ const DepartmentManagementPage = () => {
     }
 
     if (!specializationName.trim()) {
-      setActionError(
-        "กรุณากรอกชื่อความเชี่ยวชาญ",
-      );
+      setActionError("กรุณากรอกชื่อความเชี่ยวชาญ");
       return;
     }
 
@@ -611,25 +531,18 @@ const DepartmentManagementPage = () => {
       setSaving(true);
       setActionError("");
 
-      await updateSpecialization(
-        selectedSpecialization.id,
-        {
-          name: specializationName.trim(),
-          description:
-            specializationDescription.trim() || null,
-          department_id:
-            specializationDepartmentId,
-        },
-      );
+      await updateSpecialization(selectedSpecialization.id, {
+        name: specializationName.trim(),
+        description: specializationDescription.trim() || null,
+        department_id: specializationDepartmentId,
+      });
 
       await loadData(search, showInactive);
 
       setSaving(false);
       finishModal();
     } catch {
-      setActionError(
-        "ไม่สามารถแก้ไขความเชี่ยวชาญได้",
-      );
+      setActionError("ไม่สามารถแก้ไขความเชี่ยวชาญได้");
       setSaving(false);
     }
   };
@@ -652,15 +565,11 @@ const DepartmentManagementPage = () => {
     try {
       setError("");
 
-      await deleteSpecialization(
-        specialization.id,
-      );
+      await deleteSpecialization(specialization.id);
 
       await loadData(search, showInactive);
     } catch {
-      setError(
-        "ไม่สามารถปิดใช้งานความเชี่ยวชาญได้",
-      );
+      setError("ไม่สามารถปิดใช้งานความเชี่ยวชาญได้");
     }
   };
 
@@ -692,10 +601,7 @@ const DepartmentManagementPage = () => {
       setSaving(true);
       setActionError("");
 
-      await reactivateSpecialization(
-        selectedSpecialization.id,
-        password,
-      );
+      await reactivateSpecialization(selectedSpecialization.id, password);
 
       await loadData(search, showInactive);
 
@@ -709,146 +615,17 @@ const DepartmentManagementPage = () => {
     }
   };
 
-  // =========================================================
-  // Logout
-  // =========================================================
-
-  const handleOpenLogout = () => {
-    setModal("logout");
-  };
-
-  const handleCloseLogout = () => {
-    if (saving) {
-      return;
-    }
-
-    setModal(null);
-  };
-
-  const handleConfirmLogout = () => {
-    logout();
-    setModal(null);
-    navigate("/login", { replace: true });
-  };
-
-  const handleOpenChangePassword = () => {
-    setIsChangePasswordOpen(true);
-  };
-
-  const handleCloseChangePassword = () => {
-    setIsChangePasswordOpen(false);
-  };
-
   return (
-    <div className="doctor-page">
+    <>
       <style>{departmentModalStyle}</style>
-
-      {/* =====================================================
-          Sidebar
-      ====================================================== */}
-
-      <aside className="doctor-sidebar">
-        <div className="sidebar-brand">
-          <img
-            src="/image/logo/LOGO.png"
-            alt="CareFlow"
-            className="sidebar-logo"
-          />
-
-          <div>
-            <strong>CareFlow</strong>
-
-            <span>
-              ระบบบริหารจัดการโรงพยาบาล
-            </span>
-          </div>
-        </div>
-
-        <div className="sidebar-role">
-          <span>ระบบสำหรับ Staff</span>
-        </div>
-
-        <nav className="sidebar-nav">
-          <button
-            type="button"
-            className="sidebar-nav-item"
-            onClick={() => navigate("/staff")}
-          >
-            <span className="nav-icon">⌂</span>
-            <span>เช็คอินผู้ป่วย</span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-nav-item"
-            onClick={() =>
-              navigate("/staff/doctors")
-            }
-          >
-            <span className="nav-icon">♙</span>
-            <span>จัดการแพทย์</span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-nav-item"
-            onClick={() =>
-              navigate("/staff/create")
-            }
-          >
-            <span className="nav-icon">♙</span>
-            <span>จัดการเจ้าหน้าที่</span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-nav-item active"
-            onClick={() =>
-              navigate("/staff/departments")
-            }
-          >
-            <span className="nav-icon">▦</span>
-            <span>จัดการแผนก</span>
-          </button>
-        </nav>
-
-        <div className="sidebar-bottom">
-          <button
-            type="button"
-            className="sidebar-bottom-item"
-            onClick={handleOpenChangePassword}
-          >
-            <span className="nav-icon">⚿</span>
-            <span>เปลี่ยนรหัสผ่าน</span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-bottom-item logout-item"
-            onClick={handleOpenLogout}
-          >
-            <span className="nav-icon">↪</span>
-            <span>ออกจากระบบ</span>
-          </button>
-        </div>
-      </aside>
-
-      {/* =====================================================
-          Content
-      ====================================================== */}
-
       <main className="doctor-content">
         <header className="doctor-header">
           <div>
-            <span className="page-eyebrow">
-              CareFlow Hospital System
-            </span>
+            <span className="page-eyebrow">CareFlow Hospital System</span>
 
             <h1>จัดการแผนก</h1>
 
-            <p>
-              จัดการแผนกและความเชี่ยวชาญ
-            </p>
+            <p>จัดการแผนกและความเชี่ยวชาญ</p>
           </div>
 
           <div
@@ -862,9 +639,7 @@ const DepartmentManagementPage = () => {
             <button
               type="button"
               className="action-button secondary"
-              onClick={
-                handleOpenCreateSpecialization
-              }
+              onClick={handleOpenCreateSpecialization}
             >
               + เพิ่มความเชี่ยวชาญ
             </button>
@@ -872,9 +647,7 @@ const DepartmentManagementPage = () => {
             <button
               type="button"
               className="action-button primary"
-              onClick={
-                handleOpenCreateDepartment
-              }
+              onClick={handleOpenCreateDepartment}
             >
               + เพิ่มแผนก
             </button>
@@ -903,15 +676,11 @@ const DepartmentManagementPage = () => {
               value={search}
               placeholder="ค้นหาแผนกหรือความเชี่ยวชาญ"
               onChange={(event) => {
-                const value =
-                  event.target.value;
+                const value = event.target.value;
 
                 setSearch(value);
 
-                void loadData(
-                  value,
-                  showInactive,
-                );
+                void loadData(value, showInactive);
               }}
               style={{
                 flex: 1,
@@ -919,11 +688,9 @@ const DepartmentManagementPage = () => {
                 height: 42,
                 boxSizing: "border-box",
                 padding: "0 12px",
-                border:
-                  "1px solid var(--border)",
+                border: "1px solid var(--border)",
                 borderRadius: 7,
-                background:
-                  "var(--surface)",
+                background: "var(--surface)",
                 color: "var(--text)",
                 fontFamily: "var(--font)",
                 fontSize: 14,
@@ -938,10 +705,7 @@ const DepartmentManagementPage = () => {
                 className="action-button secondary"
                 onClick={() => {
                   setSearch("");
-                  void loadData(
-                    "",
-                    showInactive,
-                  );
+                  void loadData("", showInactive);
                 }}
               >
                 ล้าง
@@ -952,21 +716,15 @@ const DepartmentManagementPage = () => {
               type="button"
               className="action-button secondary"
               onClick={() => {
-                const next =
-                  !showInactive;
+                const next = !showInactive;
 
                 setShowInactive(next);
                 setSearch("");
 
-                void loadData(
-                  "",
-                  next,
-                );
+                void loadData("", next);
               }}
             >
-              {showInactive
-                ? "แสดงรายการที่ใช้งาน"
-                : "แสดงรายการที่ปิดใช้งาน"}
+              {showInactive ? "แสดงรายการที่ใช้งาน" : "แสดงรายการที่ปิดใช้งาน"}
             </button>
           </div>
         </section>
@@ -980,8 +738,7 @@ const DepartmentManagementPage = () => {
             <div
               style={{
                 padding: 24,
-                color:
-                  "var(--text-secondary)",
+                color: "var(--text-secondary)",
                 fontSize: 14,
                 fontWeight: 400,
               }}
@@ -991,322 +748,334 @@ const DepartmentManagementPage = () => {
           </div>
         )}
 
-        {!loading && error && (
-          <div className="doctor-alert">
-            {error}
-          </div>
-        )}
+        {!loading && error && <div className="doctor-alert">{error}</div>}
 
         {/* ===================================================
             Empty
         ==================================================== */}
 
-        {!loading &&
-          !error &&
-          filteredDepartments.length ===
-            0 && (
-            <div className="current-patient-card">
-              <div
-                style={{
-                  padding: 24,
-                  color:
-                    "var(--text-secondary)",
-                  fontSize: 14,
-                  fontWeight: 400,
-                }}
-              >
-                {showInactive
-                  ? "ไม่พบรายการที่ปิดใช้งาน"
-                  : "ไม่พบข้อมูลแผนก"}
-              </div>
+        {!loading && !error && filteredDepartments.length === 0 && (
+          <div className="current-patient-card">
+            <div
+              style={{
+                padding: 24,
+                color: "var(--text-secondary)",
+                fontSize: 14,
+                fontWeight: 400,
+              }}
+            >
+              {showInactive ? "ไม่พบรายการที่ปิดใช้งาน" : "ไม่พบข้อมูลแผนก"}
             </div>
-          )}
+          </div>
+        )}
 
         {/* ===================================================
             Department Cards
         ==================================================== */}
 
-        {!loading &&
-          !error &&
-          filteredDepartments.length >
-            0 && (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 20,
-              }}
-            >
-              {filteredDepartments.map(
-                (department) => {
-                  const departmentSpecializations =
-                    getDepartmentSpecializations(
-                      department.id,
-                    );
+        {!loading && !error && filteredDepartments.length > 0 && (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 20,
+            }}
+          >
+            {filteredDepartments.map((department) => {
+              const departmentSpecializations = getDepartmentSpecializations(
+                department.id,
+              );
 
-                  const isInactive =
-                    department.status ===
-                    "inactive";
+              const isInactive = department.status === "inactive";
 
-                  return (
-                    <section
-                      key={department.id}
-                      className="current-patient-card"
-                      style={{
-                        overflow: "hidden",
-                      }}
-                    >
-                      {/* =============================
+              return (
+                <section
+                  key={department.id}
+                  className="current-patient-card"
+                  style={{
+                    overflow: "hidden",
+                  }}
+                >
+                  {/* =============================
                           Department - Top
                       ============================== */}
+
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 20,
+                      padding: "22px 24px",
+                    }}
+                  >
+                    {department.image_url ? (
+                      <img
+                        src={department.image_url}
+                        alt={department.name}
+                        style={{
+                          width: 88,
+                          height: 88,
+                          flexShrink: 0,
+                          objectFit: "cover",
+                          borderRadius: 10,
+                          border: "1px solid var(--border)",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: 88,
+                          height: 88,
+                          flexShrink: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          borderRadius: 10,
+                          background: "#f1f5f9",
+                          color: "var(--text-secondary)",
+                          fontSize: 12,
+                          fontWeight: 400,
+                        }}
+                      >
+                        ไม่มีรูป
+                      </div>
+                    )}
+
+                    <div
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          justifyContent: "space-between",
+                          gap: 20,
+                        }}
+                      >
+                        <div>
+                          <h2
+                            style={{
+                              margin: "0 0 5px",
+                              color: "var(--text-h)",
+                              fontSize: 21,
+                              lineHeight: 1.4,
+                              fontWeight: 500,
+                            }}
+                          >
+                            {department.name}
+                          </h2>
+
+                          <p
+                            style={{
+                              margin: 0,
+                              color: "var(--text-secondary)",
+                              fontSize: 14,
+                              lineHeight: 1.6,
+                              fontWeight: 400,
+                            }}
+                          >
+                            {department.description || "ไม่มีรายละเอียด"}
+                          </p>
+                        </div>
+
+                        <span
+                          style={{
+                            flexShrink: 0,
+                            color: isInactive
+                              ? "var(--danger)"
+                              : "var(--success)",
+                            fontSize: 13,
+                            lineHeight: 1.4,
+                            fontWeight: 400,
+                          }}
+                        >
+                          {isInactive ? "ปิดใช้งาน" : "ใช้งาน"}
+                        </span>
+                      </div>
+
+                      <p
+                        style={{
+                          margin: "10px 0 14px",
+                          color: "var(--text-secondary)",
+                          fontSize: 13,
+                          lineHeight: 1.5,
+                          fontWeight: 400,
+                        }}
+                      >
+                        ระยะเวลานัดหมาย: {department.slot_duration_minutes} นาที
+                      </p>
 
                       <div
                         style={{
                           display: "flex",
-                          alignItems:
-                            "flex-start",
-                          gap: 20,
-                          padding:
-                            "22px 24px",
+                          gap: 10,
+                          flexWrap: "wrap",
                         }}
                       >
-                        {department.image_url ? (
-                          <img
-                            src={
-                              department.image_url
-                            }
-                            alt={
-                              department.name
-                            }
-                            style={{
-                              width: 88,
-                              height: 88,
-                              flexShrink: 0,
-                              objectFit:
-                                "cover",
-                              borderRadius: 10,
-                              border:
-                                "1px solid var(--border)",
-                            }}
-                          />
-                        ) : (
-                          <div
-                            style={{
-                              width: 88,
-                              height: 88,
-                              flexShrink: 0,
-                              display: "flex",
-                              alignItems:
-                                "center",
-                              justifyContent:
-                                "center",
-                              borderRadius: 10,
-                              background:
-                                "#f1f5f9",
-                              color:
-                                "var(--text-secondary)",
-                              fontSize: 12,
-                              fontWeight: 400,
-                            }}
-                          >
-                            ไม่มีรูป
-                          </div>
+                        {!isInactive && (
+                          <>
+                            <button
+                              type="button"
+                              className="action-button secondary"
+                              onClick={() =>
+                                handleOpenEditDepartment(department)
+                              }
+                            >
+                              แก้ไข
+                            </button>
+
+                            <button
+                              type="button"
+                              className="action-button danger"
+                              onClick={() =>
+                                void handleDeleteDepartment(department)
+                              }
+                            >
+                              ปิดใช้งาน
+                            </button>
+                          </>
                         )}
 
-                        <div
-                          style={{
-                            flex: 1,
-                            minWidth: 0,
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems:
-                                "flex-start",
-                              justifyContent:
-                                "space-between",
-                              gap: 20,
-                            }}
+                        {isInactive && (
+                          <button
+                            type="button"
+                            className="action-button primary"
+                            onClick={() =>
+                              handleOpenReactivateDepartment(department)
+                            }
                           >
-                            <div>
-                              <h2
-                                style={{
-                                  margin:
-                                    "0 0 5px",
-                                  color:
-                                    "var(--text-h)",
-                                  fontSize: 21,
-                                  lineHeight:
-                                    1.4,
-                                  fontWeight: 500,
-                                }}
-                              >
-                                {
-                                  department.name
-                                }
-                              </h2>
-
-                              <p
-                                style={{
-                                  margin: 0,
-                                  color:
-                                    "var(--text-secondary)",
-                                  fontSize: 14,
-                                  lineHeight:
-                                    1.6,
-                                  fontWeight: 400,
-                                }}
-                              >
-                                {department.description ||
-                                  "ไม่มีรายละเอียด"}
-                              </p>
-                            </div>
-
-                            <span
-                              style={{
-                                flexShrink: 0,
-                                color:
-                                  isInactive
-                                    ? "var(--danger)"
-                                    : "var(--success)",
-                                fontSize: 13,
-                                lineHeight:
-                                  1.4,
-                                fontWeight: 400,
-                              }}
-                            >
-                              {isInactive
-                                ? "ปิดใช้งาน"
-                                : "ใช้งาน"}
-                            </span>
-                          </div>
-
-                          <p
-                            style={{
-                              margin:
-                                "10px 0 14px",
-                              color:
-                                "var(--text-secondary)",
-                              fontSize: 13,
-                              lineHeight:
-                                1.5,
-                              fontWeight: 400,
-                            }}
-                          >
-                            ระยะเวลานัดหมาย:{" "}
-                            {
-                              department.slot_duration_minutes
-                            }{" "}
-                            นาที
-                          </p>
-
-                          <div
-                            style={{
-                              display:
-                                "flex",
-                              gap: 10,
-                              flexWrap:
-                                "wrap",
-                            }}
-                          >
-                            {!isInactive && (
-                              <>
-                                <button
-                                  type="button"
-                                  className="action-button secondary"
-                                  onClick={() =>
-                                    handleOpenEditDepartment(
-                                      department,
-                                    )
-                                  }
-                                >
-                                  แก้ไข
-                                </button>
-
-                                <button
-                                  type="button"
-                                  className="action-button danger"
-                                  onClick={() =>
-                                    void handleDeleteDepartment(
-                                      department,
-                                    )
-                                  }
-                                >
-                                  ปิดใช้งาน
-                                </button>
-                              </>
-                            )}
-
-                            {isInactive && (
-                              <button
-                                type="button"
-                                className="action-button primary"
-                                onClick={() =>
-                                  handleOpenReactivateDepartment(
-                                    department,
-                                  )
-                                }
-                              >
-                                เปิดใช้งาน
-                              </button>
-                            )}
-                          </div>
-                        </div>
+                            เปิดใช้งาน
+                          </button>
+                        )}
                       </div>
+                    </div>
+                  </div>
 
-                      {/* =============================
-                          Specialization - Bottom
-                      ============================== */}
+                  {/* =============================
+    Specialization - Bottom
+============================= */}
 
+                  <div
+                    style={{
+                      borderTop: "1px solid var(--border)",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() =>
+                        toggleDepartmentSpecializations(department.id)
+                      }
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 16,
+                        padding: "18px 24px",
+                        border: "none",
+                        background: "transparent",
+                        color: "var(--text)",
+                        cursor: "pointer",
+                        textAlign: "left",
+                        fontFamily: "var(--font)",
+                      }}
+                    >
                       <div
                         style={{
-                          borderTop:
-                            "1px solid var(--border)",
-                          padding:
-                            "20px 24px 22px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
                         }}
                       >
-                        <div
-                          style={{
-                            marginBottom: 14,
-                          }}
-                        >
+                        <div>
                           <span
                             className="section-eyebrow"
                             style={{
-                              marginBottom: 4,
+                              display: "block",
+                              marginBottom: 3,
                             }}
                           >
                             ความเชี่ยวชาญ
                           </span>
 
-                          <h3
+                          <div
                             style={{
-                              margin: 0,
-                              color:
-                                "var(--text-h)",
-                              fontSize: 17,
-                              lineHeight:
-                                1.4,
-                              fontWeight: 500,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 10,
                             }}
                           >
-                            ความเชี่ยวชาญ
-                          </h3>
-                        </div>
+                            <h3
+                              style={{
+                                margin: 0,
+                                color: "var(--text-h)",
+                                fontSize: 16,
+                                lineHeight: 1.4,
+                                fontWeight: 500,
+                              }}
+                            >
+                              ความเชี่ยวชาญ
+                            </h3>
 
-                        {departmentSpecializations.length ===
-                          0 ? (
+                            <span
+                              style={{
+                                color: "var(--text-secondary)",
+                                fontSize: 13,
+                                lineHeight: 1.4,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {departmentSpecializations.length} รายการ
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          width: 24,
+                          height: 24,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <span
+                          style={{
+                            display: "block",
+                            width: 7,
+                            height: 7,
+                            borderRight: "1.5px solid var(--text-secondary)",
+                            borderBottom: "1.5px solid var(--text-secondary)",
+                            transform: expandedDepartments[department.id]
+                              ? "rotate(-135deg)"
+                              : "rotate(45deg)",
+                            transition: "transform 0.2s ease",
+                          }}
+                        />
+                      </div>
+                    </button>
+
+                    {expandedDepartments[department.id] && (
+                      <div
+                        style={{
+                          padding: "0 24px 22px",
+                        }}
+                      >
+                        {departmentSpecializations.length === 0 ? (
                           <p
                             style={{
                               margin: 0,
-                              color:
-                                "var(--text-secondary)",
+                              padding: "14px 15px",
+                              color: "var(--text-secondary)",
                               fontSize: 14,
-                              lineHeight:
-                                1.5,
-                              fontWeight: 400,
+                              lineHeight: 1.5,
+                              border: "1px solid var(--border)",
+                              borderRadius: 8,
                             }}
                           >
                             ยังไม่มีความเชี่ยวชาญ
@@ -1314,217 +1083,167 @@ const DepartmentManagementPage = () => {
                         ) : (
                           <div
                             style={{
-                              display:
-                                "flex",
-                              flexDirection:
-                                "column",
+                              display: "flex",
+                              flexDirection: "column",
                               gap: 10,
                             }}
                           >
-                            {departmentSpecializations.map(
-                              (
-                                specialization,
-                              ) => {
-                                const inactive =
-                                  specialization.status ===
-                                  "inactive";
+                            {departmentSpecializations.map((specialization) => {
+                              const inactive =
+                                specialization.status === "inactive";
 
-                                return (
+                              return (
+                                <div
+                                  key={specialization.id}
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    gap: 20,
+                                    padding: "13px 15px",
+                                    border: "1px solid var(--border)",
+                                    borderRadius: 8,
+                                    background: inactive
+                                      ? "#fafafa"
+                                      : "var(--surface)",
+                                  }}
+                                >
                                   <div
-                                    key={
-                                      specialization.id
-                                    }
                                     style={{
-                                      display:
-                                        "flex",
-                                      alignItems:
-                                        "center",
-                                      justifyContent:
-                                        "space-between",
-                                      gap: 20,
-                                      padding:
-                                        "13px 15px",
-                                      border:
-                                        "1px solid var(--border)",
-                                      borderRadius: 8,
-                                      background:
-                                        inactive
-                                          ? "#fafafa"
-                                          : "var(--surface)",
+                                      minWidth: 0,
                                     }}
                                   >
                                     <div
                                       style={{
-                                        minWidth: 0,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 8,
                                       }}
                                     >
-                                      <div
+                                      <span
                                         style={{
-                                          display:
-                                            "flex",
-                                          alignItems:
-                                            "center",
-                                          gap: 8,
+                                          color: "var(--text)",
+                                          fontSize: 14,
+                                          lineHeight: 1.5,
+                                          fontWeight: 400,
                                         }}
                                       >
-                                        <span
-                                          style={{
-                                            color:
-                                              "var(--text)",
-                                            fontSize:
-                                              14,
-                                            lineHeight:
-                                              1.5,
-                                            fontWeight:
-                                              400,
-                                          }}
-                                        >
-                                          {
-                                            specialization.name
-                                          }
-                                        </span>
+                                        {specialization.name}
+                                      </span>
 
-                                        <span
-                                          style={{
-                                            color:
-                                              inactive
-                                                ? "var(--danger)"
-                                                : "var(--success)",
-                                            fontSize:
-                                              12,
-                                            lineHeight:
-                                              1.4,
-                                            fontWeight:
-                                              400,
-                                          }}
-                                        >
-                                          {inactive
-                                            ? "ปิดใช้งาน"
-                                            : "ใช้งาน"}
-                                        </span>
-                                      </div>
-
-                                      <p
+                                      <span
                                         style={{
-                                          margin:
-                                            "3px 0 0",
-                                          color:
-                                            "var(--text-secondary)",
-                                          fontSize:
-                                            13,
-                                          lineHeight:
-                                            1.5,
-                                          fontWeight:
-                                            400,
+                                          color: inactive
+                                            ? "var(--danger)"
+                                            : "var(--success)",
+                                          fontSize: 12,
+                                          lineHeight: 1.4,
+                                          fontWeight: 400,
                                         }}
                                       >
-                                        {specialization.description ||
-                                          "ไม่มีรายละเอียด"}
-                                      </p>
+                                        {inactive ? "ปิดใช้งาน" : "ใช้งาน"}
+                                      </span>
                                     </div>
 
-                                    <div
+                                    <p
                                       style={{
-                                        display:
-                                          "flex",
-                                        gap: 10,
-                                        flexShrink:
-                                          0,
+                                        margin: "3px 0 0",
+                                        color: "var(--text-secondary)",
+                                        fontSize: 13,
+                                        lineHeight: 1.5,
+                                        fontWeight: 400,
                                       }}
                                     >
-                                      {!inactive && (
-                                        <>
-                                          <button
-                                            type="button"
-                                            className="action-button secondary"
-                                            onClick={() =>
-                                              handleOpenEditSpecialization(
-                                                specialization,
-                                              )
-                                            }
-                                          >
-                                            แก้ไข
-                                          </button>
+                                      {specialization.description ||
+                                        "ไม่มีรายละเอียด"}
+                                    </p>
+                                  </div>
 
-                                          <button
-                                            type="button"
-                                            className="action-button danger"
-                                            onClick={() =>
-                                              void handleDeleteSpecialization(
-                                                specialization,
-                                              )
-                                            }
-                                          >
-                                            ปิดใช้งาน
-                                          </button>
-                                        </>
-                                      )}
-
-                                      {inactive && (
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      gap: 10,
+                                      flexShrink: 0,
+                                    }}
+                                  >
+                                    {!inactive && (
+                                      <>
                                         <button
                                           type="button"
-                                          className="action-button primary"
+                                          className="action-button secondary"
                                           onClick={() =>
-                                            handleOpenReactivateSpecialization(
+                                            handleOpenEditSpecialization(
                                               specialization,
                                             )
                                           }
                                         >
-                                          เปิดใช้งาน
+                                          แก้ไข
                                         </button>
-                                      )}
-                                    </div>
+
+                                        <button
+                                          type="button"
+                                          className="action-button danger"
+                                          onClick={() =>
+                                            void handleDeleteSpecialization(
+                                              specialization,
+                                            )
+                                          }
+                                        >
+                                          ปิดใช้งาน
+                                        </button>
+                                      </>
+                                    )}
+
+                                    {inactive && (
+                                      <button
+                                        type="button"
+                                        className="action-button primary"
+                                        onClick={() =>
+                                          handleOpenReactivateSpecialization(
+                                            specialization,
+                                          )
+                                        }
+                                      >
+                                        เปิดใช้งาน
+                                      </button>
+                                    )}
                                   </div>
-                                );
-                              },
-                            )}
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
-                    </section>
-                  );
-                },
-              )}
-            </div>
-          )}
-      </main>
+                    )}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        )}
 
-      {/* =====================================================
+        {/* =====================================================
           Create / Edit / Reactivate Modal
       ====================================================== */}
 
-      {modal &&
-        modal !== "logout" && (
+        {modal && modal !== "logout" && (
           <div
             className="doctor-modal-overlay"
             role="presentation"
             onClick={(event) => {
-              if (
-                event.target ===
-                  event.currentTarget &&
-                !saving
-              ) {
+              if (event.target === event.currentTarget && !saving) {
                 closeModal();
               }
             }}
           >
-            <div
-              className="doctor-modal"
-              role="dialog"
-              aria-modal="true"
-            >
+            <div className="doctor-modal" role="dialog" aria-modal="true">
               {/* Create Department */}
 
-              {modal ===
-                "create-department" && (
+              {modal === "create-department" && (
                 <>
-                  <div className="doctor-modal-icon">
-                    +
-                  </div>
+                  <div className="doctor-modal-icon">+</div>
 
-                  <h2>
-                    เพิ่มแผนก
-                  </h2>
+                  <h2>เพิ่มแผนก</h2>
 
                   <form
                     onSubmit={(event) => {
@@ -1533,70 +1252,50 @@ const DepartmentManagementPage = () => {
                     }}
                   >
                     <div>
-                      <label htmlFor="department-name">
-                        ชื่อแผนก
-                      </label>
+                      <label htmlFor="department-name">ชื่อแผนก</label>
 
                       <input
                         id="department-name"
-                        value={
-                          departmentName
-                        }
+                        value={departmentName}
                         onChange={(event) =>
-                          setDepartmentName(
-                            event.target.value,
-                          )
+                          setDepartmentName(event.target.value)
                         }
                         disabled={saving}
                       />
                     </div>
 
                     <div>
-                      <label htmlFor="department-description">
-                        รายละเอียด
-                      </label>
+                      <label htmlFor="department-description">รายละเอียด</label>
 
                       <textarea
                         id="department-description"
-                        value={
-                          departmentDescription
-                        }
+                        value={departmentDescription}
                         onChange={(event) =>
-                          setDepartmentDescription(
-                            event.target.value,
-                          )
+                          setDepartmentDescription(event.target.value)
                         }
                         disabled={saving}
                         rows={4}
                         style={{
                           width: "100%",
-                          padding:
-                            "10px 12px",
-                          boxSizing:
-                            "border-box",
-                          border:
-                            "1px solid var(--border)",
+                          padding: "10px 12px",
+                          boxSizing: "border-box",
+                          border: "1px solid var(--border)",
                           borderRadius: 7,
                           resize: "vertical",
-                          fontFamily:
-                            "var(--font)",
+                          fontFamily: "var(--font)",
                           fontSize: 14,
                         }}
                       />
                     </div>
 
                     <div>
-                      <label htmlFor="department-image">
-                        รูปภาพ
-                      </label>
+                      <label htmlFor="department-image">รูปภาพ</label>
 
                       <input
                         id="department-image"
                         type="file"
                         accept="image/jpeg,image/png,image/webp"
-                        onChange={
-                          handleDepartmentImageChange
-                        }
+                        onChange={handleDepartmentImageChange}
                         disabled={saving}
                       />
 
@@ -1607,18 +1306,14 @@ const DepartmentManagementPage = () => {
                           }}
                         >
                           <img
-                            src={
-                              departmentImagePreview
-                            }
+                            src={departmentImagePreview}
                             alt="ตัวอย่างรูปภาพแผนก"
                             style={{
                               width: 120,
                               height: 120,
-                              objectFit:
-                                "cover",
+                              objectFit: "cover",
                               borderRadius: 10,
-                              border:
-                                "1px solid var(--border)",
+                              border: "1px solid var(--border)",
                             }}
                           />
                         </div>
@@ -1634,23 +1329,15 @@ const DepartmentManagementPage = () => {
                         id="slot-duration"
                         type="number"
                         min="1"
-                        value={
-                          slotDuration
-                        }
+                        value={slotDuration}
                         onChange={(event) =>
-                          setSlotDuration(
-                            event.target.value,
-                          )
+                          setSlotDuration(event.target.value)
                         }
                         disabled={saving}
                       />
                     </div>
 
-                    {actionError && (
-                      <p role="alert">
-                        {actionError}
-                      </p>
-                    )}
+                    {actionError && <p role="alert">{actionError}</p>}
 
                     <div className="doctor-modal-actions">
                       <button
@@ -1658,17 +1345,13 @@ const DepartmentManagementPage = () => {
                         className="action-button primary"
                         disabled={saving}
                       >
-                        {saving
-                          ? "กำลังบันทึก..."
-                          : "ยืนยัน"}
+                        {saving ? "กำลังบันทึก..." : "ยืนยัน"}
                       </button>
 
                       <button
                         type="button"
                         className="action-button secondary"
-                        onClick={
-                          closeModal
-                        }
+                        onClick={closeModal}
                         disabled={saving}
                       >
                         ยกเลิก
@@ -1680,16 +1363,11 @@ const DepartmentManagementPage = () => {
 
               {/* Edit Department */}
 
-              {modal ===
-                "edit-department" && (
+              {modal === "edit-department" && (
                 <>
-                  <div className="doctor-modal-icon">
-                    ✎
-                  </div>
+                  <div className="doctor-modal-icon">✎</div>
 
-                  <h2>
-                    แก้ไขแผนก
-                  </h2>
+                  <h2>แก้ไขแผนก</h2>
 
                   <form
                     onSubmit={(event) => {
@@ -1698,19 +1376,13 @@ const DepartmentManagementPage = () => {
                     }}
                   >
                     <div>
-                      <label htmlFor="edit-department-name">
-                        ชื่อแผนก
-                      </label>
+                      <label htmlFor="edit-department-name">ชื่อแผนก</label>
 
                       <input
                         id="edit-department-name"
-                        value={
-                          departmentName
-                        }
+                        value={departmentName}
                         onChange={(event) =>
-                          setDepartmentName(
-                            event.target.value,
-                          )
+                          setDepartmentName(event.target.value)
                         }
                         disabled={saving}
                       />
@@ -1723,45 +1395,33 @@ const DepartmentManagementPage = () => {
 
                       <textarea
                         id="edit-department-description"
-                        value={
-                          departmentDescription
-                        }
+                        value={departmentDescription}
                         onChange={(event) =>
-                          setDepartmentDescription(
-                            event.target.value,
-                          )
+                          setDepartmentDescription(event.target.value)
                         }
                         disabled={saving}
                         rows={4}
                         style={{
                           width: "100%",
-                          padding:
-                            "10px 12px",
-                          boxSizing:
-                            "border-box",
-                          border:
-                            "1px solid var(--border)",
+                          padding: "10px 12px",
+                          boxSizing: "border-box",
+                          border: "1px solid var(--border)",
                           borderRadius: 7,
                           resize: "vertical",
-                          fontFamily:
-                            "var(--font)",
+                          fontFamily: "var(--font)",
                           fontSize: 14,
                         }}
                       />
                     </div>
 
                     <div>
-                      <label htmlFor="edit-department-image">
-                        รูปภาพ
-                      </label>
+                      <label htmlFor="edit-department-image">รูปภาพ</label>
 
                       <input
                         id="edit-department-image"
                         type="file"
                         accept="image/jpeg,image/png,image/webp"
-                        onChange={
-                          handleDepartmentImageChange
-                        }
+                        onChange={handleDepartmentImageChange}
                         disabled={saving}
                       />
 
@@ -1772,18 +1432,14 @@ const DepartmentManagementPage = () => {
                           }}
                         >
                           <img
-                            src={
-                              departmentImagePreview
-                            }
+                            src={departmentImagePreview}
                             alt="ตัวอย่างรูปภาพแผนก"
                             style={{
                               width: 120,
                               height: 120,
-                              objectFit:
-                                "cover",
+                              objectFit: "cover",
                               borderRadius: 10,
-                              border:
-                                "1px solid var(--border)",
+                              border: "1px solid var(--border)",
                             }}
                           />
                         </div>
@@ -1794,21 +1450,14 @@ const DepartmentManagementPage = () => {
                           }}
                         >
                           <img
-                            src={
-                              departmentImageUrl
-                            }
-                            alt={
-                              departmentName ||
-                              "รูปภาพแผนก"
-                            }
+                            src={departmentImageUrl}
+                            alt={departmentName || "รูปภาพแผนก"}
                             style={{
                               width: 120,
                               height: 120,
-                              objectFit:
-                                "cover",
+                              objectFit: "cover",
                               borderRadius: 10,
-                              border:
-                                "1px solid var(--border)",
+                              border: "1px solid var(--border)",
                             }}
                           />
                         </div>
@@ -1824,13 +1473,9 @@ const DepartmentManagementPage = () => {
                         id="edit-slot-duration"
                         type="number"
                         min="1"
-                        value={
-                          slotDuration
-                        }
+                        value={slotDuration}
                         onChange={(event) =>
-                          setSlotDuration(
-                            event.target.value,
-                          )
+                          setSlotDuration(event.target.value)
                         }
                         disabled={saving}
                       />
@@ -1845,9 +1490,7 @@ const DepartmentManagementPage = () => {
                         id="add-specialization"
                         value={specializationToAddId}
                         onChange={(event) =>
-                          setSpecializationToAddId(
-                            event.target.value,
-                          )
+                          setSpecializationToAddId(event.target.value)
                         }
                         disabled={saving}
                         style={{
@@ -1864,15 +1507,12 @@ const DepartmentManagementPage = () => {
                           outline: "none",
                         }}
                       >
-                        <option value="">
-                          เลือกความเชี่ยวชาญ
-                        </option>
+                        <option value="">เลือกความเชี่ยวชาญ</option>
 
                         {specializations
                           .filter(
                             (specialization) =>
-                              specialization.status ===
-                                "active" &&
+                              specialization.status === "active" &&
                               specialization.department_id !==
                                 selectedDepartment?.id,
                           )
@@ -1887,11 +1527,7 @@ const DepartmentManagementPage = () => {
                       </select>
                     </div>
 
-                    {actionError && (
-                      <p role="alert">
-                        {actionError}
-                      </p>
-                    )}
+                    {actionError && <p role="alert">{actionError}</p>}
 
                     <div className="doctor-modal-actions">
                       <button
@@ -1899,17 +1535,13 @@ const DepartmentManagementPage = () => {
                         className="action-button primary"
                         disabled={saving}
                       >
-                        {saving
-                          ? "กำลังบันทึก..."
-                          : "บันทึกการแก้ไข"}
+                        {saving ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
                       </button>
 
                       <button
                         type="button"
                         className="action-button secondary"
-                        onClick={
-                          closeModal
-                        }
+                        onClick={closeModal}
                         disabled={saving}
                       >
                         ยกเลิก
@@ -1921,23 +1553,15 @@ const DepartmentManagementPage = () => {
 
               {/* Deactivate Department */}
 
-              {modal ===
-                "deactivate-department" && (
+              {modal === "deactivate-department" && (
                 <>
-                  <div className="doctor-modal-icon warning">
-                    !
-                  </div>
+                  <div className="doctor-modal-icon warning">!</div>
 
-                  <h2>
-                    ปิดใช้งานแผนก
-                  </h2>
+                  <h2>ปิดใช้งานแผนก</h2>
 
                   <p>
                     ต้องการปิดใช้งานแผนก{" "}
-                    <strong>
-                      {selectedDepartment?.name}
-                    </strong>{" "}
-                    หรือไม่?
+                    <strong>{selectedDepartment?.name}</strong> หรือไม่?
                   </p>
 
                   <form
@@ -1964,11 +1588,7 @@ const DepartmentManagementPage = () => {
                       />
                     </div>
 
-                    {actionError && (
-                      <p role="alert">
-                        {actionError}
-                      </p>
-                    )}
+                    {actionError && <p role="alert">{actionError}</p>}
 
                     <div className="doctor-modal-actions">
                       <button
@@ -1976,9 +1596,7 @@ const DepartmentManagementPage = () => {
                         className="action-button danger"
                         disabled={saving}
                       >
-                        {saving
-                          ? "กำลังปิดใช้งาน..."
-                          : "ยืนยันปิดใช้งาน"}
+                        {saving ? "กำลังปิดใช้งาน..." : "ยืนยันปิดใช้งาน"}
                       </button>
 
                       <button
@@ -1996,16 +1614,11 @@ const DepartmentManagementPage = () => {
 
               {/* Create Specialization */}
 
-              {modal ===
-                "create-specialization" && (
+              {modal === "create-specialization" && (
                 <>
-                  <div className="doctor-modal-icon">
-                    +
-                  </div>
+                  <div className="doctor-modal-icon">+</div>
 
-                  <h2>
-                    เพิ่มความเชี่ยวชาญ
-                  </h2>
+                  <h2>เพิ่มความเชี่ยวชาญ</h2>
 
                   <form
                     onSubmit={(event) => {
@@ -2014,67 +1627,39 @@ const DepartmentManagementPage = () => {
                     }}
                   >
                     <div>
-                      <label htmlFor="specialization-department">
-                        แผนก
-                      </label>
+                      <label htmlFor="specialization-department">แผนก</label>
 
                       <select
                         id="specialization-department"
-                        value={
-                          specializationDepartmentId
-                        }
+                        value={specializationDepartmentId}
                         onChange={(event) =>
-                          setSpecializationDepartmentId(
-                            event.target.value,
-                          )
+                          setSpecializationDepartmentId(event.target.value)
                         }
                         disabled={saving}
                         style={{
                           width: "100%",
                           height: 42,
-                          padding:
-                            "0 12px",
-                          border:
-                            "1px solid var(--border)",
+                          padding: "0 12px",
+                          border: "1px solid var(--border)",
                           borderRadius: 7,
-                          background:
-                            "var(--surface)",
-                          color:
-                            "var(--text)",
-                          fontFamily:
-                            "var(--font)",
+                          background: "var(--surface)",
+                          color: "var(--text)",
+                          fontFamily: "var(--font)",
                           fontSize: 14,
                           outline: "none",
                         }}
                       >
-                        <option value="">
-                          เลือกแผนก
-                        </option>
+                        <option value="">เลือกแผนก</option>
 
                         {departments
                           .filter(
-                            (department) =>
-                              department.status ===
-                              "active",
+                            (department) => department.status === "active",
                           )
-                          .map(
-                            (
-                              department,
-                            ) => (
-                              <option
-                                key={
-                                  department.id
-                                }
-                                value={
-                                  department.id
-                                }
-                              >
-                                {
-                                  department.name
-                                }
-                              </option>
-                            ),
-                          )}
+                          .map((department) => (
+                            <option key={department.id} value={department.id}>
+                              {department.name}
+                            </option>
+                          ))}
                       </select>
                     </div>
 
@@ -2085,13 +1670,9 @@ const DepartmentManagementPage = () => {
 
                       <input
                         id="specialization-name"
-                        value={
-                          specializationName
-                        }
+                        value={specializationName}
                         onChange={(event) =>
-                          setSpecializationName(
-                            event.target.value,
-                          )
+                          setSpecializationName(event.target.value)
                         }
                         disabled={saving}
                       />
@@ -2104,38 +1685,26 @@ const DepartmentManagementPage = () => {
 
                       <textarea
                         id="specialization-description"
-                        value={
-                          specializationDescription
-                        }
+                        value={specializationDescription}
                         onChange={(event) =>
-                          setSpecializationDescription(
-                            event.target.value,
-                          )
+                          setSpecializationDescription(event.target.value)
                         }
                         disabled={saving}
                         rows={4}
                         style={{
                           width: "100%",
-                          padding:
-                            "10px 12px",
-                          boxSizing:
-                            "border-box",
-                          border:
-                            "1px solid var(--border)",
+                          padding: "10px 12px",
+                          boxSizing: "border-box",
+                          border: "1px solid var(--border)",
                           borderRadius: 7,
                           resize: "vertical",
-                          fontFamily:
-                            "var(--font)",
+                          fontFamily: "var(--font)",
                           fontSize: 14,
                         }}
                       />
                     </div>
 
-                    {actionError && (
-                      <p role="alert">
-                        {actionError}
-                      </p>
-                    )}
+                    {actionError && <p role="alert">{actionError}</p>}
 
                     <div className="doctor-modal-actions">
                       <button
@@ -2143,17 +1712,13 @@ const DepartmentManagementPage = () => {
                         className="action-button primary"
                         disabled={saving}
                       >
-                        {saving
-                          ? "กำลังบันทึก..."
-                          : "ยืนยัน"}
+                        {saving ? "กำลังบันทึก..." : "ยืนยัน"}
                       </button>
 
                       <button
                         type="button"
                         className="action-button secondary"
-                        onClick={
-                          closeModal
-                        }
+                        onClick={closeModal}
                         disabled={saving}
                       >
                         ยกเลิก
@@ -2165,16 +1730,11 @@ const DepartmentManagementPage = () => {
 
               {/* Edit Specialization */}
 
-              {modal ===
-                "edit-specialization" && (
+              {modal === "edit-specialization" && (
                 <>
-                  <div className="doctor-modal-icon">
-                    ✎
-                  </div>
+                  <div className="doctor-modal-icon">✎</div>
 
-                  <h2>
-                    แก้ไขความเชี่ยวชาญ
-                  </h2>
+                  <h2>แก้ไขความเชี่ยวชาญ</h2>
 
                   <form
                     onSubmit={(event) => {
@@ -2189,61 +1749,35 @@ const DepartmentManagementPage = () => {
 
                       <select
                         id="edit-specialization-department"
-                        value={
-                          specializationDepartmentId
-                        }
+                        value={specializationDepartmentId}
                         onChange={(event) =>
-                          setSpecializationDepartmentId(
-                            event.target.value,
-                          )
+                          setSpecializationDepartmentId(event.target.value)
                         }
                         disabled={saving}
                         style={{
                           width: "100%",
                           height: 42,
-                          padding:
-                            "0 12px",
-                          border:
-                            "1px solid var(--border)",
+                          padding: "0 12px",
+                          border: "1px solid var(--border)",
                           borderRadius: 7,
-                          background:
-                            "var(--surface)",
-                          color:
-                            "var(--text)",
-                          fontFamily:
-                            "var(--font)",
+                          background: "var(--surface)",
+                          color: "var(--text)",
+                          fontFamily: "var(--font)",
                           fontSize: 14,
                           outline: "none",
                         }}
                       >
-                        <option value="">
-                          เลือกแผนก
-                        </option>
+                        <option value="">เลือกแผนก</option>
 
                         {departments
                           .filter(
-                            (department) =>
-                              department.status ===
-                              "active",
+                            (department) => department.status === "active",
                           )
-                          .map(
-                            (
-                              department,
-                            ) => (
-                              <option
-                                key={
-                                  department.id
-                                }
-                                value={
-                                  department.id
-                                }
-                              >
-                                {
-                                  department.name
-                                }
-                              </option>
-                            ),
-                          )}
+                          .map((department) => (
+                            <option key={department.id} value={department.id}>
+                              {department.name}
+                            </option>
+                          ))}
                       </select>
                     </div>
 
@@ -2254,13 +1788,9 @@ const DepartmentManagementPage = () => {
 
                       <input
                         id="edit-specialization-name"
-                        value={
-                          specializationName
-                        }
+                        value={specializationName}
                         onChange={(event) =>
-                          setSpecializationName(
-                            event.target.value,
-                          )
+                          setSpecializationName(event.target.value)
                         }
                         disabled={saving}
                       />
@@ -2273,38 +1803,26 @@ const DepartmentManagementPage = () => {
 
                       <textarea
                         id="edit-specialization-description"
-                        value={
-                          specializationDescription
-                        }
+                        value={specializationDescription}
                         onChange={(event) =>
-                          setSpecializationDescription(
-                            event.target.value,
-                          )
+                          setSpecializationDescription(event.target.value)
                         }
                         disabled={saving}
                         rows={4}
                         style={{
                           width: "100%",
-                          padding:
-                            "10px 12px",
-                          boxSizing:
-                            "border-box",
-                          border:
-                            "1px solid var(--border)",
+                          padding: "10px 12px",
+                          boxSizing: "border-box",
+                          border: "1px solid var(--border)",
                           borderRadius: 7,
                           resize: "vertical",
-                          fontFamily:
-                            "var(--font)",
-                          fontSize:14,
+                          fontFamily: "var(--font)",
+                          fontSize: 14,
                         }}
                       />
                     </div>
 
-                    {actionError && (
-                      <p role="alert">
-                        {actionError}
-                      </p>
-                    )}
+                    {actionError && <p role="alert">{actionError}</p>}
 
                     <div className="doctor-modal-actions">
                       <button
@@ -2312,17 +1830,13 @@ const DepartmentManagementPage = () => {
                         className="action-button primary"
                         disabled={saving}
                       >
-                        {saving
-                          ? "กำลังบันทึก..."
-                          : "บันทึกการแก้ไข"}
+                        {saving ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
                       </button>
 
                       <button
                         type="button"
                         className="action-button secondary"
-                        onClick={
-                          closeModal
-                        }
+                        onClick={closeModal}
                         disabled={saving}
                       >
                         ยกเลิก
@@ -2334,25 +1848,15 @@ const DepartmentManagementPage = () => {
 
               {/* Reactivate Department */}
 
-              {modal ===
-                "reactivate-department" && (
+              {modal === "reactivate-department" && (
                 <>
-                  <div className="doctor-modal-icon">
-                    !
-                  </div>
+                  <div className="doctor-modal-icon">!</div>
 
-                  <h2>
-                    เปิดใช้งานแผนก
-                  </h2>
+                  <h2>เปิดใช้งานแผนก</h2>
 
                   <p>
                     ต้องการเปิดใช้งานแผนก{" "}
-                    <strong>
-                      {
-                        selectedDepartment?.name
-                      }
-                    </strong>{" "}
-                    หรือไม่?
+                    <strong>{selectedDepartment?.name}</strong> หรือไม่?
                   </p>
 
                   <form
@@ -2369,25 +1873,17 @@ const DepartmentManagementPage = () => {
                       <input
                         id="reactivate-department-password"
                         type="password"
-                        value={
-                          password
-                        }
+                        value={password}
                         placeholder="กรอกรหัสผ่าน"
                         onChange={(event) => {
-                          setPassword(
-                            event.target.value,
-                          );
+                          setPassword(event.target.value);
                           setActionError("");
                         }}
                         disabled={saving}
                       />
                     </div>
 
-                    {actionError && (
-                      <p role="alert">
-                        {actionError}
-                      </p>
-                    )}
+                    {actionError && <p role="alert">{actionError}</p>}
 
                     <div className="doctor-modal-actions">
                       <button
@@ -2395,17 +1891,13 @@ const DepartmentManagementPage = () => {
                         className="action-button primary"
                         disabled={saving}
                       >
-                        {saving
-                          ? "กำลังเปิดใช้งาน..."
-                          : "ยืนยันการเปิดใช้งาน"}
+                        {saving ? "กำลังเปิดใช้งาน..." : "ยืนยันการเปิดใช้งาน"}
                       </button>
 
                       <button
                         type="button"
                         className="action-button secondary"
-                        onClick={
-                          closeModal
-                        }
+                        onClick={closeModal}
                         disabled={saving}
                       >
                         ยกเลิก
@@ -2417,25 +1909,15 @@ const DepartmentManagementPage = () => {
 
               {/* Reactivate Specialization */}
 
-              {modal ===
-                "reactivate-specialization" && (
+              {modal === "reactivate-specialization" && (
                 <>
-                  <div className="doctor-modal-icon">
-                    !
-                  </div>
+                  <div className="doctor-modal-icon">!</div>
 
-                  <h2>
-                    เปิดใช้งานความเชี่ยวชาญ
-                  </h2>
+                  <h2>เปิดใช้งานความเชี่ยวชาญ</h2>
 
                   <p>
                     ต้องการเปิดใช้งานความเชี่ยวชาญ{" "}
-                    <strong>
-                      {
-                        selectedSpecialization?.name
-                      }
-                    </strong>{" "}
-                    หรือไม่?
+                    <strong>{selectedSpecialization?.name}</strong> หรือไม่?
                   </p>
 
                   <form
@@ -2452,25 +1934,17 @@ const DepartmentManagementPage = () => {
                       <input
                         id="reactivate-specialization-password"
                         type="password"
-                        value={
-                          password
-                        }
+                        value={password}
                         placeholder="กรอกรหัสผ่าน"
                         onChange={(event) => {
-                          setPassword(
-                            event.target.value,
-                          );
+                          setPassword(event.target.value);
                           setActionError("");
                         }}
                         disabled={saving}
                       />
                     </div>
 
-                    {actionError && (
-                      <p role="alert">
-                        {actionError}
-                      </p>
-                    )}
+                    {actionError && <p role="alert">{actionError}</p>}
 
                     <div className="doctor-modal-actions">
                       <button
@@ -2478,17 +1952,13 @@ const DepartmentManagementPage = () => {
                         className="action-button primary"
                         disabled={saving}
                       >
-                        {saving
-                          ? "กำลังเปิดใช้งาน..."
-                          : "ยืนยันการเปิดใช้งาน"}
+                        {saving ? "กำลังเปิดใช้งาน..." : "ยืนยันการเปิดใช้งาน"}
                       </button>
 
                       <button
                         type="button"
                         className="action-button secondary"
-                        onClick={
-                          closeModal
-                        }
+                        onClick={closeModal}
                         disabled={saving}
                       >
                         ยกเลิก
@@ -2500,69 +1970,8 @@ const DepartmentManagementPage = () => {
             </div>
           </div>
         )}
-
-      {/* =====================================================
-          Logout Modal
-      ====================================================== */}
-
-      {modal === "logout" && (
-        <div
-          className="doctor-modal-overlay"
-          role="presentation"
-          onClick={(event) => {
-            if (
-              event.target ===
-              event.currentTarget
-            ) {
-              handleCloseLogout();
-            }
-          }}
-        >
-          <div
-            className="doctor-modal"
-            role="dialog"
-            aria-modal="true"
-          >
-            <div className="doctor-modal-icon warning">
-              !
-            </div>
-
-            <h2>ออกจากระบบ</h2>
-
-            <p>
-              คุณต้องการออกจากระบบหรือไม่?
-            </p>
-
-            <div className="doctor-modal-actions">
-              <button
-                type="button"
-                className="action-button danger"
-                onClick={handleConfirmLogout}
-              >
-                ออกจากระบบ
-              </button>
-
-              <button
-                type="button"
-                className="action-button secondary"
-                onClick={handleCloseLogout}
-              >
-                ยกเลิก
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =====================================================
-          Change Password
-      ====================================================== */}
-
-      <ChangePasswordModal
-        isOpen={isChangePasswordOpen}
-        onClose={handleCloseChangePassword}
-      />
-    </div>
+      </main>
+    </>
   );
 };
 

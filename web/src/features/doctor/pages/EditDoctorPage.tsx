@@ -27,9 +27,6 @@ import {
   type SpecializationResponse,
 } from "../../department/api/specializationApi";
 
-import { logout } from "../../auth/api/authApi";
-import ChangePasswordModal from "../../profile/components/ChangePasswordModal";
-
 import "../pages/DoctorPage.css";
 
 const inputStyle: CSSProperties = {
@@ -169,12 +166,6 @@ const EditDoctorPage = () => {
   const [saving, setSaving] = useState(false);
 
   const [error, setError] = useState("");
-
-  const [isLogoutOpen, setIsLogoutOpen] =
-    useState(false);
-
-  const [isChangePasswordOpen, setIsChangePasswordOpen] =
-    useState(false);
 
   const [isSaveSuccessOpen, setIsSaveSuccessOpen] =
     useState(false);
@@ -476,410 +467,40 @@ const EditDoctorPage = () => {
     }
   };
 
-  const handleOpenLogout = () => {
-    setIsLogoutOpen(true);
-  };
-
-  const handleCloseLogout = () => {
-    setIsLogoutOpen(false);
-  };
-
-  const handleConfirmLogout = () => {
-    logout();
-    setIsLogoutOpen(false);
-
-    navigate("/login", {
-      replace: true,
-    });
-  };
-
-  const handleOpenChangePassword = () => {
-    setIsChangePasswordOpen(true);
-  };
-
-  const handleCloseChangePassword = () => {
-    setIsChangePasswordOpen(false);
-  };
-
-  const handleCloseSaveSuccess = () => {
-    setIsSaveSuccessOpen(false);
-
-    navigate("/staff/doctors", {
-      replace: true,
-    });
-  };
 
   if (loading) {
-    return (
-      <main className="doctor-page">
-        <aside className="doctor-sidebar">
-          <div className="sidebar-brand">
-            <img
-              src="/image/logo/LOGO.png"
-              alt="CareFlow"
-              className="sidebar-logo"
-            />
-
-            <div>
-              <strong>CareFlow</strong>
-
-              <span>
-                ระบบบริหารจัดการโรงพยาบาล
-              </span>
-            </div>
-          </div>
-
-          <div className="sidebar-role">
-            <span>ระบบสำหรับ Staff</span>
-          </div>
-
-          <nav className="sidebar-nav">
-            <button
-              type="button"
-              className="sidebar-nav-item"
-              onClick={() =>
-                navigate("/staff")
-              }
-            >
-              <span className="nav-icon">
-                ⌂
-              </span>
-
-              <span>เช็คอินผู้ป่วย</span>
-            </button>
-
-            <button
-              type="button"
-              className="sidebar-nav-item active"
-              onClick={() =>
-                navigate("/staff/doctors")
-              }
-            >
-              <span className="nav-icon">
-                ♙
-              </span>
-
-              <span>จัดการแพทย์</span>
-            </button>
-
-            <button
-              type="button"
-              className="sidebar-nav-item"
-            >
-              <span className="nav-icon">
-                ▤
-              </span>
-
-              <span>จัดการ Staff</span>
-            </button>
-
-            <button
-              type="button"
-              className="sidebar-nav-item"
-              onClick={() =>
-                navigate("/staff/departments")
-              }
-            >
-              <span className="nav-icon">
-                ▦
-              </span>
-
-              <span>จัดการแผนก</span>
-            </button>
-          </nav>
-
-          <div className="sidebar-bottom">
-            <button
-              type="button"
-              className="sidebar-bottom-item"
-              onClick={
-                handleOpenChangePassword
-              }
-            >
-              <span className="nav-icon">
-                ⚿
-              </span>
-
-              <span>เปลี่ยนรหัสผ่าน</span>
-            </button>
-
-            <button
-              type="button"
-              className="sidebar-bottom-item logout-item"
-              onClick={handleOpenLogout}
-            >
-              <span className="nav-icon">
-                ↪
-              </span>
-
-              <span>ออกจากระบบ</span>
-            </button>
-          </div>
-        </aside>
-
-        <section className="doctor-content">
-          <div className="doctor-card">
-            <p>
-              กำลังโหลดข้อมูล Doctor...
-            </p>
-          </div>
-        </section>
-      </main>
-    );
-  }
+  return (
+    <section className="doctor-content">
+      <div className="doctor-card">
+        <p>กำลังโหลดข้อมูล Doctor...</p>
+      </div>
+    </section>
+  );
+}
 
   if (!doctor) {
-    return (
-      <main className="doctor-page">
-        <aside className="doctor-sidebar">
-          <div className="sidebar-brand">
-            <img
-              src="/image/logo/LOGO.png"
-              alt="CareFlow"
-              className="sidebar-logo"
-            />
+  return (
+    <section className="doctor-content">
+      <div className="doctor-card">
+        <p>
+          {error || "ไม่พบข้อมูล Doctor"}
+        </p>
 
-            <div>
-              <strong>CareFlow</strong>
-
-              <span>
-                ระบบบริหารจัดการโรงพยาบาล
-              </span>
-            </div>
-          </div>
-
-          <div className="sidebar-role">
-            <span>ระบบสำหรับ Staff</span>
-          </div>
-
-          <nav className="sidebar-nav">
-            <button
-              type="button"
-              className="sidebar-nav-item"
-              onClick={() =>
-                navigate("/staff")
-              }
-            >
-              <span className="nav-icon">
-                ⌂
-              </span>
-
-              <span>เช็คอินผู้ป่วย</span>
-            </button>
-
-            <button
-              type="button"
-              className="sidebar-nav-item active"
-              onClick={() =>
-                navigate("/staff/doctors")
-              }
-            >
-              <span className="nav-icon">
-                ♙
-              </span>
-
-              <span>จัดการแพทย์</span>
-            </button>
-
-            <button
-              type="button"
-              className="sidebar-nav-item"
-            >
-              <span className="nav-icon">
-                ▤
-              </span>
-
-              <span>จัดการ Staff</span>
-            </button>
-
-            <button
-              type="button"
-              className="sidebar-nav-item"
-              onClick={() =>
-                navigate("/staff/departments")
-              }
-            >
-              <span className="nav-icon">
-                ▦
-              </span>
-
-              <span>จัดการแผนก</span>
-            </button>
-          </nav>
-
-          <div className="sidebar-bottom">
-            <button
-              type="button"
-              className="sidebar-bottom-item"
-              onClick={
-                handleOpenChangePassword
-              }
-            >
-              <span className="nav-icon">
-                ⚿
-              </span>
-
-              <span>เปลี่ยนรหัสผ่าน</span>
-            </button>
-
-            <button
-              type="button"
-              className="sidebar-bottom-item logout-item"
-              onClick={handleOpenLogout}
-            >
-              <span className="nav-icon">
-                ↪
-              </span>
-
-              <span>ออกจากระบบ</span>
-            </button>
-          </div>
-        </aside>
-
-        <section className="doctor-content">
-          <div className="doctor-card">
-            <p>
-              {error ||
-                "ไม่พบข้อมูล Doctor"}
-            </p>
-
-            <button
-              type="button"
-              className="action-button secondary"
-              onClick={() =>
-                navigate("/staff/doctors")
-              }
-            >
-              กลับรายการ Doctor
-            </button>
-          </div>
-        </section>
-
-        <ChangePasswordModal
-          isOpen={
-            isChangePasswordOpen
+        <button
+          type="button"
+          className="action-button secondary"
+          onClick={() =>
+            navigate("/staff/doctors")
           }
-          onClose={
-            handleCloseChangePassword
-          }
-        />
-      </main>
-    );
-  }
+        >
+          กลับรายการ Doctor
+        </button>
+      </div>
+    </section>
+  );
+}
 
   return (
-    <main className="doctor-page">
-      {/* =========================
-          Sidebar
-      ========================== */}
-      <aside className="doctor-sidebar">
-        <div className="sidebar-brand">
-          <img
-            src="/image/logo/LOGO.png"
-            alt="CareFlow"
-            className="sidebar-logo"
-          />
-
-          <div>
-            <strong>CareFlow</strong>
-
-            <span>
-              ระบบบริหารจัดการโรงพยาบาล
-            </span>
-          </div>
-        </div>
-
-        <div className="sidebar-role">
-          <span>ระบบสำหรับ Staff</span>
-        </div>
-
-        <nav className="sidebar-nav">
-          <button
-            type="button"
-            className="sidebar-nav-item"
-            onClick={() =>
-              navigate("/staff")
-            }
-          >
-            <span className="nav-icon">
-              ⌂
-            </span>
-
-            <span>เช็คอินผู้ป่วย</span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-nav-item active"
-            onClick={() =>
-              navigate("/staff/doctors")
-            }
-          >
-            <span className="nav-icon">
-              ♙
-            </span>
-
-            <span>จัดการแพทย์</span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-nav-item"
-          >
-            <span className="nav-icon">
-              ▤
-            </span>
-
-            <span>จัดการเจ้าหน้าที่</span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-nav-item"
-            onClick={() =>
-              navigate("/staff/departments")
-            }
-          >
-            <span className="nav-icon">
-              ▦
-            </span>
-
-            <span>จัดการแผนก</span>
-          </button>
-        </nav>
-
-        <div className="sidebar-bottom">
-          <button
-            type="button"
-            className="sidebar-bottom-item"
-            onClick={
-              handleOpenChangePassword
-            }
-          >
-            <span className="nav-icon">
-              ⚿
-            </span>
-
-            <span>เปลี่ยนรหัสผ่าน</span>
-          </button>
-
-          <button
-            type="button"
-            className="sidebar-bottom-item logout-item"
-            onClick={handleOpenLogout}
-          >
-            <span className="nav-icon">
-              ↪
-            </span>
-
-            <span>ออกจากระบบ</span>
-          </button>
-        </div>
-      </aside>
-
-      {/* =========================
-          Main Content
-      ========================== */}
       <section className="doctor-content">
         <header className="doctor-header">
           <div>
@@ -921,25 +542,23 @@ const EditDoctorPage = () => {
               <div style={rowStyle}>
                 <div style={fieldStyle}>
                   <label
-                    htmlFor="doctor-id"
-                    style={labelStyle}
-                  >
-                    Doctor ID
-                  </label>
+                  htmlFor="employee-id"
+                  style={labelStyle}
+                >
+                  Employee ID
+                </label>
 
-                  <input
-                    id="doctor-id"
-                    value={doctor.id}
-                    readOnly
-                    style={{
-                      ...inputStyle,
-                      background:
-                        "var(--bg)",
-                      color:
-                        "var(--muted)",
-                      cursor: "default",
-                    }}
-                  />
+                <input
+                  id="employee-id"
+                  value={doctor.employee_id}
+                  readOnly
+                  style={{
+                    ...inputStyle,
+                    background: "var(--bg)",
+                    color: "var(--muted)",
+                    cursor: "default",
+                  }}
+                />
                 </div>
 
                 <div style={fieldStyle}>
@@ -1496,11 +1115,8 @@ const EditDoctorPage = () => {
             </div>
           </div>
         </form>
-      </section>
+      
 
-      {/* =========================
-          Save Success Modal
-      ========================== */}
       {isSaveSuccessOpen && (
         <div
           className="doctor-modal-overlay"
@@ -1538,13 +1154,10 @@ const EditDoctorPage = () => {
               <button
                 type="button"
                 className="action-button primary"
-                onClick={
-                  handleCloseSaveSuccess
-                }
+                onClick={() => setIsSaveSuccessOpen(false)}
                 style={{
                   width: "100%",
-                  justifyContent:
-                    "center",
+                  justifyContent: "center",
                 }}
               >
                 ตกลง
@@ -1553,74 +1166,7 @@ const EditDoctorPage = () => {
           </div>
         </div>
       )}
-
-      {/* =========================
-          Logout Modal
-      ========================== */}
-      {isLogoutOpen && (
-        <div
-          className="doctor-modal-overlay"
-          role="presentation"
-          onClick={handleCloseLogout}
-        >
-          <div
-            className="doctor-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="logout-modal-title"
-            onClick={(event) =>
-              event.stopPropagation()
-            }
-          >
-            <div className="doctor-modal-icon warning">
-              ↪
-            </div>
-
-            <h2 id="logout-modal-title">
-              ยืนยันการออกจากระบบ
-            </h2>
-
-            <p>
-              คุณต้องการออกจากระบบใช่หรือไม่?
-            </p>
-
-            <div className="doctor-modal-actions">
-              <button
-                type="button"
-                className="action-button secondary"
-                onClick={
-                  handleCloseLogout
-                }
-              >
-                ยกเลิก
-              </button>
-
-              <button
-                type="button"
-                className="action-button danger"
-                onClick={
-                  handleConfirmLogout
-                }
-              >
-                ยืนยัน
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =========================
-          Change Password Modal
-      ========================== */}
-      <ChangePasswordModal
-        isOpen={
-          isChangePasswordOpen
-        }
-        onClose={
-          handleCloseChangePassword
-        }
-      />
-    </main>
+    </section>
   );
 };
 

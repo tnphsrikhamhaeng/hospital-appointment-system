@@ -101,3 +101,24 @@ class NotificationRepository:
         return list(
             self.db.scalars(statement).all(),
         )
+    
+    def delete_by_patient_id(
+        self,
+        patient_id: uuid.UUID,
+    ) -> int:
+        notifications = (
+            self.db.query(NotificationLog)
+            .filter(
+                NotificationLog.patient_id == patient_id,
+            )
+            .all()
+        )
+
+        deleted_count = len(notifications)
+
+        for notification in notifications:
+            self.db.delete(notification)
+
+        self.db.flush()
+
+        return deleted_count

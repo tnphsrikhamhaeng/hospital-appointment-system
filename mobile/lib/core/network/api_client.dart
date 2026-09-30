@@ -3,9 +3,8 @@ import 'package:dio/dio.dart';
 import '../storage/token_storage.dart';
 
 class ApiClient {
-  ApiClient({
-    TokenStorage? tokenStorage,
-  }) : _tokenStorage = tokenStorage ?? TokenStorage() {
+  ApiClient({TokenStorage? tokenStorage})
+    : _tokenStorage = tokenStorage ?? TokenStorage() {
     _dio = Dio(
       BaseOptions(
         baseUrl: _baseUrl,
@@ -33,8 +32,11 @@ class ApiClient {
       ),
     );
   }
-
-  static const String _baseUrl = 'http://10.0.2.2:8000';
+  static const String _baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://10.0.2.2:8000',
+  );
+  static String get baseUrl => _baseUrl;
   late final Dio _dio;
   final TokenStorage _tokenStorage;
 

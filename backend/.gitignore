@@ -31,3 +31,4 @@ app/uploads/
 
 # Local cleanup scripts
 cleanup_test_data.py
+

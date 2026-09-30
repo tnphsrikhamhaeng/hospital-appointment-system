@@ -39,7 +39,9 @@ dependencies:
   qr_flutter: ^4.1.0
   firebase_core: ^4.1.0
   firebase_messaging: ^16.0.0
-
+  flutter_local_notifications: ^19.4.2
+  onesignal_flutter: ^5.7.0
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter

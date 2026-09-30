@@ -125,8 +125,18 @@ class _MedicalRecordDetailsPageState extends State<MedicalRecordDetailsPage> {
       return trimmedUrl;
     }
 
-    if (uri.host == 'localhost' || uri.host == '127.0.0.1') {
-      return uri.replace(host: '10.0.2.2').toString();
+    final baseUri = Uri.parse(ApiClient.baseUrl);
+
+    if (uri.host == 'localhost' ||
+        uri.host == '127.0.0.1' ||
+        uri.host == '10.0.2.2') {
+      return uri
+          .replace(
+            scheme: baseUri.scheme,
+            host: baseUri.host,
+            port: baseUri.hasPort ? baseUri.port : null,
+          )
+          .toString();
     }
 
     return trimmedUrl;
@@ -179,9 +189,7 @@ class _MedicalRecordDetailsPageState extends State<MedicalRecordDetailsPage> {
   }
 
   Widget _buildHeaderCard() {
-    final imageUrl = _resolveDoctorImageUrl(
-      _doctor?.profileImageUrl,
-    );
+    final imageUrl = _resolveDoctorImageUrl(_doctor?.profileImageUrl);
 
     return Container(
       width: double.infinity,
@@ -228,10 +236,7 @@ class _MedicalRecordDetailsPageState extends State<MedicalRecordDetailsPage> {
           // Doctor information
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 10,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
@@ -259,11 +264,7 @@ class _MedicalRecordDetailsPageState extends State<MedicalRecordDetailsPage> {
                       : Image.network(
                           imageUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (
-                            context,
-                            error,
-                            stackTrace,
-                          ) {
+                          errorBuilder: (context, error, stackTrace) {
                             return const Icon(
                               Icons.person_rounded,
                               size: 22,
@@ -399,19 +400,13 @@ class _MedicalRecordDetailsPageState extends State<MedicalRecordDetailsPage> {
         children: [
           _buildSubTitle('ผลการตรวจร่างกาย (PHYSICAL EXAMINATION)'),
           const SizedBox(height: 8),
-          _buildVitalItem(
-            label: 'ผลตรวจ',
-            value: record.physicalExamination!,
-          ),
+          _buildVitalItem(label: 'ผลตรวจ', value: record.physicalExamination!),
         ],
       ),
     );
   }
 
-  Widget _buildVitalItem({
-    required String label,
-    required String value,
-  }) {
+  Widget _buildVitalItem({required String label, required String value}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -472,10 +467,7 @@ class _MedicalRecordDetailsPageState extends State<MedicalRecordDetailsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSubTitle(
-          'การรักษา (TREATMENT)',
-          color: const Color(0xFF00897B),
-        ),
+        _buildSubTitle('การรักษา (TREATMENT)', color: const Color(0xFF00897B)),
         const SizedBox(height: 6),
         _buildBodyText(record.treatment!),
       ],

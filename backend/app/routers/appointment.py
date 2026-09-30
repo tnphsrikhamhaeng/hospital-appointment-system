@@ -2,7 +2,13 @@ import uuid
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    Query,
+    status,
+)
 
 from sqlalchemy.orm import Session
 
@@ -58,16 +64,15 @@ def get_doctor_repository(
     status_code=status.HTTP_201_CREATED,
 )
 def create_appointment(
-    patient_id: uuid.UUID,
     request: AppointmentCreateRequest,
-    service: AppointmentService = Depends(
-        get_appointment_service
-    ),
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+    service: AppointmentService = Depends(get_appointment_service),
 ):
-
     return service.create_appointment(
-        patient_id,
+        current_user.id,
         request,
+        background_tasks,
     )
 
 
@@ -248,14 +253,14 @@ def get_doctor_schedule(
 def reschedule_appointment(
     appointment_id: uuid.UUID,
     request: AppointmentRescheduleRequest,
-    service: AppointmentService = Depends(
-        get_appointment_service
-    ),
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+    service: AppointmentService = Depends(get_appointment_service),
 ):
-
     return service.reschedule_appointment(
         appointment_id,
         request,
+        background_tasks,
     )
 
 
@@ -266,14 +271,14 @@ def reschedule_appointment(
 def cancel_appointment(
     appointment_id: uuid.UUID,
     request: AppointmentCancelRequest,
-    service: AppointmentService = Depends(
-        get_appointment_service
-    ),
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+    service: AppointmentService = Depends(get_appointment_service),
 ):
-
     return service.cancel_appointment(
         appointment_id,
         request,
+        background_tasks,
     )
 
 
@@ -284,12 +289,10 @@ def cancel_appointment(
 def update_status(
     appointment_id: uuid.UUID,
     request: AppointmentStatusUpdateRequest,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
-    service: AppointmentService = Depends(
-        get_appointment_service
-    ),
+    service: AppointmentService = Depends(get_appointment_service),
 ):
-
     if current_user.role not in {
         UserRoleEnum.DOCTOR,
         UserRoleEnum.HOSPITAL_STAFF,
@@ -300,4 +303,5 @@ def update_status(
         appointment_id,
         request,
         current_user,
+        background_tasks,
     )

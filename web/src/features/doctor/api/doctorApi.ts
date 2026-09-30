@@ -41,6 +41,7 @@ export interface Specialization {
 
 export interface DoctorResponse {
   id: string;
+  employee_id: string;
   profile_image_url: string | null;
   preface: DoctorPreface;
   first_name: string;

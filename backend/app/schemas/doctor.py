@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 
 from pydantic import (
+    AliasPath,
     BaseModel,
     ConfigDict,
     EmailStr,
@@ -130,6 +131,10 @@ class DoctorResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
+    
+    employee_id: str = Field(
+        validation_alias=AliasPath("user", "username"),
+    )
 
     profile_image_url: HttpUrl | None
 
