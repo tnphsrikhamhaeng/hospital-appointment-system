@@ -1,0 +1,50 @@
+# API Documentation
+
+Backend API พัฒนาด้วย FastAPI และแบ่ง Endpoint ตามหน้าที่ของระบบ
+
+## 1. Authentication
+~~~text
+POST /auth/register
+POST /auth/login
+POST /auth/staff-login
+~~~
+
+## 2. Appointment
+~~~text
+POST   /appointments
+GET    /appointments/search
+GET    /appointments/my
+GET    /appointments/my/schedule
+GET    /appointments/{appointment_id}
+GET    /appointments/{appointment_id}/patient
+GET    /appointments/patients/{patient_id}
+GET    /appointments/doctors/{doctor_id}
+GET    /appointments/doctors/{doctor_id}/schedule
+PATCH  /appointments/{appointment_id}/reschedule
+PATCH  /appointments/{appointment_id}/cancel
+PATCH  /appointments/{appointment_id}/status
+~~~
+
+Endpoint /appointments/my และ /appointments/my/schedule ตรวจสอบ Current User ว่าเป็น Doctor
+
+Endpoint เปลี่ยนสถานะ Appointment อนุญาต Doctor หรือ Hospital Staff
+
+## 3. Medical Record
+~~~text
+POST  /medical-records
+GET   /medical-records
+GET   /medical-records/doctor/history
+GET   /medical-records/{medical_record_id}
+PATCH /medical-records/{medical_record_id}
+~~~
+
+Medical Record มีการตรวจสอบสิทธิ์ตาม Role
+
+## 4. Other API Groups
+ระบบยังมี Router สำหรับ Doctor, Staff, Department, Specialization, Doctor Schedule Template, Appointment QR, Profile, Change Password, Password Reset, Notification, Notification Setting, Reactivate และ Upload
+
+## 5. Request / Response
+API ใช้ Pydantic Schema สำหรับตรวจสอบและกำหนดรูปแบบ Request และ Response
+
+## 6. API Documentation
+FastAPI สร้าง Interactive API Documentation ที่ /docs เมื่อ Backend ทำงาน
