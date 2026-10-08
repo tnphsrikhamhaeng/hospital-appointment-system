@@ -107,10 +107,6 @@ const staffModalStyle = `
     }
   }
 `;
-const [showAddPassword, setShowAddPassword] = useState(false);
-const [showDeactivatePassword, setShowDeactivatePassword] = useState(false);
-const [showReactivatePassword, setShowReactivatePassword] = useState(false);
-
 function CreateStaffPage() {
   /* =========================
      Staff List
@@ -140,6 +136,12 @@ function CreateStaffPage() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [showAddPassword, setShowAddPassword] = useState(false);
+
+  const [showDeactivatePassword, setShowDeactivatePassword] = useState(false);
+
+  const [showReactivatePassword, setShowReactivatePassword] = useState(false);
 
   const [addError, setAddError] = useState("");
 
@@ -1216,18 +1218,48 @@ function CreateStaffPage() {
                   ยืนยันรหัสผ่านเจ้าหน้าที่
                 </label>
 
-                <input
-                  id="deactivate-staff-password"
-                  type="password"
-                  value={deactivatePassword}
-                  placeholder="กรอกรหัสผ่าน"
-                  disabled={isDeactivating}
-                  autoComplete="current-password"
-                  onChange={(event) => {
-                    setDeactivatePassword(event.target.value);
-                    setDeactivateError("");
-                  }}
-                />
+                <div style={{ position: "relative" }}>
+                  <input
+                    id="deactivate-staff-password"
+                    type={showDeactivatePassword ? "text" : "password"}
+                    value={deactivatePassword}
+                    placeholder="กรอกรหัสผ่าน"
+                    disabled={isDeactivating}
+                    autoComplete="current-password"
+                    onChange={(event) => {
+                      setDeactivatePassword(event.target.value);
+                      setDeactivateError("");
+                    }}
+                    style={{ paddingRight: "42px" }}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowDeactivatePassword((previous) => !previous)
+                    }
+                    disabled={isDeactivating}
+                    aria-label={
+                      showDeactivatePassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"
+                    }
+                    style={{
+                      position: "absolute",
+                      right: "10px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      border: "none",
+                      background: "transparent",
+                      padding: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "var(--muted)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {showDeactivatePassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                  </button>
+                </div>
               </div>
 
               {deactivateError && (
@@ -1308,18 +1340,48 @@ function CreateStaffPage() {
                   ยืนยันรหัสผ่านเจ้าหน้าที่
                 </label>
 
-                <input
-                  id="reactivate-staff-password"
-                  type="password"
-                  value={reactivatePassword}
-                  placeholder="กรอกรหัสผ่าน"
-                  disabled={isReactivating}
-                  autoComplete="current-password"
-                  onChange={(event) => {
-                    setReactivatePassword(event.target.value);
-                    setReactivateError("");
-                  }}
-                />
+                <div style={{ position: "relative" }}>
+                  <input
+                    id="reactivate-staff-password"
+                    type={showReactivatePassword ? "text" : "password"}
+                    value={reactivatePassword}
+                    placeholder="กรอกรหัสผ่าน"
+                    disabled={isReactivating}
+                    autoComplete="current-password"
+                    onChange={(event) => {
+                      setReactivatePassword(event.target.value);
+                      setReactivateError("");
+                    }}
+                    style={{ paddingRight: "42px" }}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowReactivatePassword((previous) => !previous)
+                    }
+                    disabled={isReactivating}
+                    aria-label={
+                      showReactivatePassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"
+                    }
+                    style={{
+                      position: "absolute",
+                      right: "10px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      border: "none",
+                      background: "transparent",
+                      padding: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "var(--muted)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {showReactivatePassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                  </button>
+                </div>
               </div>
 
               {reactivateError && (
