@@ -66,6 +66,28 @@ type ModalType =
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
+const getDepartmentImageUrl = (department: DepartmentResponse) => {
+  const name = department.name.trim();
+
+  if (name.includes("ทางเดินอาหาร")) {
+    return "/images/departments/gastroenterology_department.png";
+  }
+
+  if (name.includes("หัวใจ")) {
+    return "/images/departments/cardiology_department.png";
+  }
+
+  if (name.includes("ประสาท") || name.includes("ระบบประสาท")) {
+    return "/images/departments/neurology_department.png";
+  }
+
+  if (name.includes("อายุรกรรม")) {
+    return "/images/departments/internal_medicine_department.png";
+  }
+
+  return department.image_url;
+};
+
 const DepartmentManagementPage = () => {
   const [departments, setDepartments] = useState<DepartmentResponse[]>([]);
 
@@ -810,7 +832,7 @@ const DepartmentManagementPage = () => {
                   >
                     {department.image_url ? (
                       <img
-                        src={department.image_url}
+                        src={getDepartmentImageUrl(department)}
                         alt={department.name}
                         style={{
                           width: 88,
