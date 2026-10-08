@@ -149,6 +149,7 @@ function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProps) {
           <div className="change-password-field">
             <label htmlFor="current-password">รหัสผ่านเดิม</label>
 
+            <div style={{ position: "relative" }}>
             <input
               id="current-password"
               type={showCurrentPassword ? "text" : "password"}
@@ -159,12 +160,38 @@ function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProps) {
               disabled={isChangingPassword}
               autoComplete="current-password"
               required
+              style={{ paddingRight: "42px" }}
             />
+
+              <button
+                type="button"
+                onClick={() => setShowCurrentPassword((previous) => !previous)}
+                disabled={isChangingPassword}
+                aria-label={showCurrentPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+                style={{
+                  position: "absolute",
+                  right: "10px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  border: "none",
+                  background: "transparent",
+                  padding: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--muted)",
+                  cursor: "pointer",
+                }}
+              >
+                {showCurrentPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+              </button>
+            </div>
           </div>
 
           <div className="change-password-field">
             <label htmlFor="new-password">รหัสผ่านใหม่</label>
 
+            <div style={{ position: "relative" }}>
             <input
               id="new-password"
               type={showNewPassword ? "text" : "password"}
@@ -175,12 +202,38 @@ function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProps) {
               disabled={isChangingPassword}
               autoComplete="new-password"
               required
+              style={{ paddingRight: "42px" }}
             />
+
+              <button
+                type="button"
+                onClick={() => setShowNewPassword((previous) => !previous)}
+                disabled={isChangingPassword}
+                aria-label={showNewPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+                style={{
+                  position: "absolute",
+                  right: "10px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  border: "none",
+                  background: "transparent",
+                  padding: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--muted)",
+                  cursor: "pointer",
+                }}
+              >
+                {showNewPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+              </button>
+            </div>
           </div>
 
           <div className="change-password-field">
             <label htmlFor="confirm-password">ยืนยันรหัสผ่านใหม่</label>
 
+            <div style={{ position: "relative" }}>
             <input
               id="confirm-password"
               type={showConfirmPassword ? "text" : "password"}
@@ -191,7 +244,32 @@ function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProps) {
               disabled={isChangingPassword}
               autoComplete="new-password"
               required
+              style={{ paddingRight: "42px" }}
             />
+
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((previous) => !previous)}
+                disabled={isChangingPassword}
+                aria-label={showConfirmPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+                style={{
+                  position: "absolute",
+                  right: "10px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  border: "none",
+                  background: "transparent",
+                  padding: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--muted)",
+                  cursor: "pointer",
+                }}
+              >
+                {showConfirmPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+              </button>
+            </div>
           </div>
 
           {errorMessage && (
