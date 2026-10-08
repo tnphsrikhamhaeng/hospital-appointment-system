@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { login } from "../authService";
+import { Eye, EyeOff } from "lucide-react";
 import "./LoginPage.css";
 
 function LoginPage() {
@@ -14,9 +15,7 @@ function LoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     setErrorMessage("");
@@ -40,11 +39,7 @@ function LoginPage() {
 
       setErrorMessage("บัญชีนี้ไม่มีสิทธิ์เข้าใช้งานระบบ");
     } catch (error: unknown) {
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "response" in error
-      ) {
+      if (typeof error === "object" && error !== null && "response" in error) {
         const response = (
           error as {
             response?: {
@@ -56,8 +51,7 @@ function LoginPage() {
         ).response;
 
         setErrorMessage(
-          response?.data?.detail ??
-            "เกิดข้อผิดพลาดในการเข้าสู่ระบบ",
+          response?.data?.detail ?? "เกิดข้อผิดพลาดในการเข้าสู่ระบบ",
         );
       } else {
         setErrorMessage("ไม่สามารถเชื่อมต่อกับระบบได้");
@@ -78,9 +72,7 @@ function LoginPage() {
               alt="CareFlow"
             />
 
-            <span className="login-brand-name">
-              CareFlow
-            </span>
+            <span className="login-brand-name">CareFlow</span>
           </div>
 
           <div className="login-brand-content">
@@ -111,33 +103,22 @@ function LoginPage() {
 
         <div className="login-form-panel">
           <div className="login-form-header">
-            <span className="login-form-eyebrow">
-              CareFlow
-            </span>
+            <span className="login-form-eyebrow">CareFlow</span>
 
             <h2>เข้าสู่ระบบ</h2>
 
-            <p>
-              กรุณาเข้าสู่ระบบเพื่อใช้งาน
-            </p>
+            <p>กรุณาเข้าสู่ระบบเพื่อใช้งาน</p>
           </div>
 
-          <form
-            className="login-form"
-            onSubmit={handleSubmit}
-          >
+          <form className="login-form" onSubmit={handleSubmit}>
             <div className="login-field">
-              <label htmlFor="username">
-                ชื่อผู้ใช้หรืออีเมล
-              </label>
+              <label htmlFor="username">ชื่อผู้ใช้หรืออีเมล</label>
 
               <input
                 id="username"
                 type="text"
                 value={username}
-                onChange={(event) =>
-                  setUsername(event.target.value)
-                }
+                onChange={(event) => setUsername(event.target.value)}
                 placeholder="กรอกชื่อผู้ใช้หรืออีเมล"
                 autoComplete="username"
                 disabled={isLoading}
@@ -146,18 +127,14 @@ function LoginPage() {
             </div>
 
             <div className="login-field">
-              <label htmlFor="password">
-                รหัสผ่าน
-              </label>
+              <label htmlFor="password">รหัสผ่าน</label>
 
               <div className="password-input-wrapper">
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(event) =>
-                    setPassword(event.target.value)
-                  }
+                  onChange={(event) => setPassword(event.target.value)}
                   placeholder="กรอกรหัสผ่าน"
                   autoComplete="current-password"
                   disabled={isLoading}
@@ -167,45 +144,28 @@ function LoginPage() {
                 <button
                   type="button"
                   className="password-toggle"
-                  onClick={() =>
-                    setShowPassword((previous) => !previous)
-                  }
+                  onClick={() => setShowPassword((previous) => !previous)}
                   disabled={isLoading}
-                  aria-label={
-                    showPassword
-                      ? "ซ่อนรหัสผ่าน"
-                      : "แสดงรหัสผ่าน"
-                  }
+                  aria-label={showPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
                 >
-                  {showPassword ? "ซ่อน" : "แสดง"}
+                  {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
                 </button>
               </div>
             </div>
 
             {errorMessage && (
-              <div
-                className="login-error"
-                role="alert"
-              >
+              <div className="login-error" role="alert">
                 {errorMessage}
               </div>
             )}
 
-            <button
-              className="login-submit"
-              type="submit"
-              disabled={isLoading}
-            >
-              {isLoading
-                ? "กำลังเข้าสู่ระบบ..."
-                : "เข้าสู่ระบบ"}
+            <button className="login-submit" type="submit" disabled={isLoading}>
+              {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
             </button>
           </form>
 
           <div className="login-security-note">
-            <span className="login-security-icon">
-              ✓
-            </span>
+            <span className="login-security-icon">✓</span>
 
             <p>
               ระบบสำหรับบุคลากรที่ได้รับอนุญาตกรุณาเก็บข้อมูลบัญชีผู้ใช้เป็นความลับ

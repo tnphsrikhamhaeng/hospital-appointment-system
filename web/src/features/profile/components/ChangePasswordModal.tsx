@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { changePassword } from "../api/changePasswordApi";
+import { Eye, EyeOff } from "lucide-react";
 import "../../doctor/pages/DoctorPage.css";
 import "./ChangePasswordModal.css";
 
@@ -14,25 +15,24 @@ interface PasswordForm {
   confirm_password: string;
 }
 
-function ChangePasswordModal({
-  isOpen,
-  onClose,
-}: ChangePasswordModalProps) {
-  const [passwordForm, setPasswordForm] =
-    useState<PasswordForm>({
-      current_password: "",
-      new_password: "",
-      confirm_password: "",
-    });
+function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProps) {
+  const [passwordForm, setPasswordForm] = useState<PasswordForm>({
+    current_password: "",
+    new_password: "",
+    confirm_password: "",
+  });
 
-  const [isChangingPassword, setIsChangingPassword] =
-    useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
 
-  const [errorMessage, setErrorMessage] =
-    useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
-  const [successMessage, setSuccessMessage] =
-    useState("");
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const [successMessage, setSuccessMessage] = useState("");
 
   if (!isOpen) {
     return null;
@@ -59,10 +59,7 @@ function ChangePasswordModal({
   };
 
   const handleChange = (
-    field:
-      | "current_password"
-      | "new_password"
-      | "confirm_password",
+    field: "current_password" | "new_password" | "confirm_password",
     value: string,
   ) => {
     setPasswordForm((current) => ({
@@ -74,9 +71,7 @@ function ChangePasswordModal({
     setSuccessMessage("");
   };
 
-  const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     setErrorMessage("");
@@ -86,19 +81,12 @@ function ChangePasswordModal({
       passwordForm.new_password.length < 8 ||
       passwordForm.new_password.length > 20
     ) {
-      setErrorMessage(
-        "รหัสผ่านใหม่ต้องมีความยาว 8–20 ตัวอักษร",
-      );
+      setErrorMessage("รหัสผ่านใหม่ต้องมีความยาว 8–20 ตัวอักษร");
       return;
     }
 
-    if (
-      passwordForm.new_password !==
-      passwordForm.confirm_password
-    ) {
-      setErrorMessage(
-        "รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน",
-      );
+    if (passwordForm.new_password !== passwordForm.confirm_password) {
+      setErrorMessage("รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน");
       return;
     }
 
@@ -107,9 +95,7 @@ function ChangePasswordModal({
     try {
       await changePassword(passwordForm);
 
-      setSuccessMessage(
-        "เปลี่ยนรหัสผ่านเรียบร้อยแล้ว",
-      );
+      setSuccessMessage("เปลี่ยนรหัสผ่านเรียบร้อยแล้ว");
 
       setPasswordForm({
         current_password: "",
@@ -117,11 +103,7 @@ function ChangePasswordModal({
         confirm_password: "",
       });
     } catch (error: unknown) {
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "response" in error
-      ) {
+      if (typeof error === "object" && error !== null && "response" in error) {
         const response = (
           error as {
             response?: {
@@ -140,9 +122,7 @@ function ChangePasswordModal({
         }
       }
 
-      setErrorMessage(
-        "ไม่สามารถเปลี่ยนรหัสผ่านได้",
-      );
+      setErrorMessage("ไม่สามารถเปลี่ยนรหัสผ่านได้");
     } finally {
       setIsChangingPassword(false);
     }
@@ -159,35 +139,22 @@ function ChangePasswordModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="change-password-modal-title"
-        onClick={(event) =>
-          event.stopPropagation()
-        }
+        onClick={(event) => event.stopPropagation()}
       >
-        <h2 id="change-password-modal-title">
-          เปลี่ยนรหัสผ่าน
-        </h2>
+        <h2 id="change-password-modal-title">เปลี่ยนรหัสผ่าน</h2>
 
-        <p>
-          กรอกรหัสผ่านเดิมและกำหนดรหัสผ่านใหม่
-        </p>
+        <p>กรอกรหัสผ่านเดิมและกำหนดรหัสผ่านใหม่</p>
 
         <form onSubmit={handleSubmit}>
           <div className="change-password-field">
-            <label htmlFor="current-password">
-              รหัสผ่านเดิม
-            </label>
+            <label htmlFor="current-password">รหัสผ่านเดิม</label>
 
             <input
               id="current-password"
-              type="password"
-              value={
-                passwordForm.current_password
-              }
+              type={showCurrentPassword ? "text" : "password"}
+              value={passwordForm.current_password}
               onChange={(event) =>
-                handleChange(
-                  "current_password",
-                  event.target.value,
-                )
+                handleChange("current_password", event.target.value)
               }
               disabled={isChangingPassword}
               autoComplete="current-password"
@@ -196,21 +163,14 @@ function ChangePasswordModal({
           </div>
 
           <div className="change-password-field">
-            <label htmlFor="new-password">
-              รหัสผ่านใหม่
-            </label>
+            <label htmlFor="new-password">รหัสผ่านใหม่</label>
 
             <input
               id="new-password"
-              type="password"
-              value={
-                passwordForm.new_password
-              }
+              type={showNewPassword ? "text" : "password"}
+              value={passwordForm.new_password}
               onChange={(event) =>
-                handleChange(
-                  "new_password",
-                  event.target.value,
-                )
+                handleChange("new_password", event.target.value)
               }
               disabled={isChangingPassword}
               autoComplete="new-password"
@@ -219,21 +179,14 @@ function ChangePasswordModal({
           </div>
 
           <div className="change-password-field">
-            <label htmlFor="confirm-password">
-              ยืนยันรหัสผ่านใหม่
-            </label>
+            <label htmlFor="confirm-password">ยืนยันรหัสผ่านใหม่</label>
 
             <input
               id="confirm-password"
-              type="password"
-              value={
-                passwordForm.confirm_password
-              }
+              type={showConfirmPassword ? "text" : "password"}
+              value={passwordForm.confirm_password}
               onChange={(event) =>
-                handleChange(
-                  "confirm_password",
-                  event.target.value,
-                )
+                handleChange("confirm_password", event.target.value)
               }
               disabled={isChangingPassword}
               autoComplete="new-password"
@@ -242,19 +195,13 @@ function ChangePasswordModal({
           </div>
 
           {errorMessage && (
-            <p
-              className="change-password-message error"
-              role="alert"
-            >
+            <p className="change-password-message error" role="alert">
               {errorMessage}
             </p>
           )}
 
           {successMessage && (
-            <p
-              className="change-password-message success"
-              role="status"
-            >
+            <p className="change-password-message success" role="status">
               {successMessage}
             </p>
           )}
@@ -279,9 +226,7 @@ function ChangePasswordModal({
                 boxSizing: "border-box",
               }}
             >
-              {isChangingPassword
-                ? "กำลังบันทึก..."
-                : "เปลี่ยนรหัสผ่าน"}
+              {isChangingPassword ? "กำลังบันทึก..." : "เปลี่ยนรหัสผ่าน"}
             </button>
 
             <button

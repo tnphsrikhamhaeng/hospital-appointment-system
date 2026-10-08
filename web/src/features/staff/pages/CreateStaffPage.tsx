@@ -1,9 +1,5 @@
-import {
-  useEffect,
-  useState,
-  type FormEvent,
-} from "react";
-import { AlertTriangle } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import { AlertTriangle, Eye, EyeOff } from "lucide-react";
 
 import {
   createStaff,
@@ -15,8 +11,6 @@ import {
   type StaffResponse,
   type StaffUpdateRequest,
 } from "../api/staffApi";
-
-
 
 import "../../doctor/pages/DoctorPage.css";
 
@@ -113,127 +107,91 @@ const staffModalStyle = `
     }
   }
 `;
+const [showAddPassword, setShowAddPassword] = useState(false);
+const [showDeactivatePassword, setShowDeactivatePassword] = useState(false);
+const [showReactivatePassword, setShowReactivatePassword] = useState(false);
 
 function CreateStaffPage() {
-
   /* =========================
      Staff List
   ========================== */
-  const [staffList, setStaffList] = useState<
-    StaffResponse[]
-  >([]);
+  const [staffList, setStaffList] = useState<StaffResponse[]>([]);
 
   const [search, setSearch] = useState("");
 
-  const [showInactive, setShowInactive] =
-    useState(false);
+  const [showInactive, setShowInactive] = useState(false);
 
-  const [isLoading, setIsLoading] =
-    useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [errorMessage, setErrorMessage] =
-    useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   /* =========================
      Add Staff
   ========================== */
-  const [isAddOpen, setIsAddOpen] =
-    useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
-  const [form, setForm] =
-    useState<StaffCreateRequest>({
-      username: "",
-      password: "",
-      first_name: "",
-      last_name: "",
-      phone_number: "",
-      email: "",
-    });
+  const [form, setForm] = useState<StaffCreateRequest>({
+    username: "",
+    password: "",
+    first_name: "",
+    last_name: "",
+    phone_number: "",
+    email: "",
+  });
 
-  const [isSubmitting, setIsSubmitting] =
-    useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [addError, setAddError] =
-    useState("");
+  const [addError, setAddError] = useState("");
 
-  const [addSuccess, setAddSuccess] =
-    useState("");
+  const [addSuccess, setAddSuccess] = useState("");
 
   /* =========================
      Edit Staff
   ========================== */
-  const [selectedStaff, setSelectedStaff] =
-    useState<StaffResponse | null>(null);
+  const [selectedStaff, setSelectedStaff] = useState<StaffResponse | null>(
+    null,
+  );
 
-  const [editForm, setEditForm] =
-    useState<StaffUpdateRequest>({
-      username: "",
-      first_name: "",
-      last_name: "",
-      phone_number: "",
-      email: "",
-    });
+  const [editForm, setEditForm] = useState<StaffUpdateRequest>({
+    username: "",
+    first_name: "",
+    last_name: "",
+    phone_number: "",
+    email: "",
+  });
 
-  const [isEditing, setIsEditing] =
-    useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
-  const [editError, setEditError] =
-    useState("");
+  const [editError, setEditError] = useState("");
 
   /* =========================
      Deactivate Staff
   ========================== */
-  const [
-    selectedDeactivateStaff,
-    setSelectedDeactivateStaff,
-  ] = useState<StaffResponse | null>(null);
+  const [selectedDeactivateStaff, setSelectedDeactivateStaff] =
+    useState<StaffResponse | null>(null);
 
-  const [
-    deactivatePassword,
-    setDeactivatePassword,
-  ] = useState("");
+  const [deactivatePassword, setDeactivatePassword] = useState("");
 
-  const [
-    isDeactivating,
-    setIsDeactivating,
-  ] = useState(false);
+  const [isDeactivating, setIsDeactivating] = useState(false);
 
-  const [
-    deactivateError,
-    setDeactivateError,
-  ] = useState("");
+  const [deactivateError, setDeactivateError] = useState("");
 
   /* =========================
      Reactivate Staff
   ========================== */
-  const [
-    selectedReactivateStaff,
-    setSelectedReactivateStaff,
-  ] = useState<StaffResponse | null>(null);
+  const [selectedReactivateStaff, setSelectedReactivateStaff] =
+    useState<StaffResponse | null>(null);
 
-  const [
-    reactivatePassword,
-    setReactivatePassword,
-  ] = useState("");
+  const [reactivatePassword, setReactivatePassword] = useState("");
 
-  const [
-    isReactivating,
-    setIsReactivating,
-  ] = useState(false);
+  const [isReactivating, setIsReactivating] = useState(false);
 
-  const [
-    reactivateError,
-    setReactivateError,
-  ] = useState("");
-
+  const [reactivateError, setReactivateError] = useState("");
 
   /* =========================
      Load Staff
   ========================== */
-  const loadStaff = async (
-    searchValue = "",
-    inactive = false,
-  ) => {
+  const loadStaff = async (searchValue = "", inactive = false) => {
     setIsLoading(true);
     setErrorMessage("");
 
@@ -245,9 +203,7 @@ function CreateStaffPage() {
 
       setStaffList(data);
     } catch {
-      setErrorMessage(
-        "ไม่สามารถโหลดรายการเจ้าหน้าที่ได้",
-      );
+      setErrorMessage("ไม่สามารถโหลดรายการเจ้าหน้าที่ได้");
     } finally {
       setIsLoading(false);
     }
@@ -260,47 +216,30 @@ function CreateStaffPage() {
   /* =========================
      Search
   ========================== */
-  const handleSearchChange = (
-    value: string,
-  ) => {
+  const handleSearchChange = (value: string) => {
     setSearch(value);
 
-    void loadStaff(
-      value,
-      showInactive,
-    );
+    void loadStaff(value, showInactive);
   };
 
   const handleSearch = () => {
-    void loadStaff(
-      search,
-      showInactive,
-    );
+    void loadStaff(search, showInactive);
   };
 
   const handleClearSearch = () => {
     setSearch("");
 
-    void loadStaff(
-      "",
-      showInactive,
-    );
+    void loadStaff("", showInactive);
   };
 
   const handleToggleInactive = () => {
-    const nextShowInactive =
-      !showInactive;
+    const nextShowInactive = !showInactive;
 
-    setShowInactive(
-      nextShowInactive,
-    );
+    setShowInactive(nextShowInactive);
 
     setSearch("");
 
-    void loadStaff(
-      "",
-      nextShowInactive,
-    );
+    void loadStaff("", nextShowInactive);
   };
 
   /* =========================
@@ -331,10 +270,7 @@ function CreateStaffPage() {
     setAddSuccess("");
   };
 
-  const handleChange = (
-    field: keyof StaffCreateRequest,
-    value: string,
-  ) => {
+  const handleChange = (field: keyof StaffCreateRequest, value: string) => {
     setForm((current) => ({
       ...current,
       [field]: value,
@@ -344,9 +280,7 @@ function CreateStaffPage() {
     setAddSuccess("");
   };
 
-  const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     setAddError("");
@@ -360,16 +294,12 @@ function CreateStaffPage() {
       !form.phone_number.trim() ||
       !form.email.trim()
     ) {
-      setAddError(
-        "กรุณากรอกข้อมูลให้ครบทุกช่อง",
-      );
+      setAddError("กรุณากรอกข้อมูลให้ครบทุกช่อง");
       return;
     }
 
     if (form.password.length < 8) {
-      setAddError(
-        "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร",
-      );
+      setAddError("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร");
       return;
     }
 
@@ -377,22 +307,15 @@ function CreateStaffPage() {
 
     try {
       await createStaff({
-        username:
-          form.username.trim(),
+        username: form.username.trim(),
         password: form.password,
-        first_name:
-          form.first_name.trim(),
-        last_name:
-          form.last_name.trim(),
-        phone_number:
-          form.phone_number.trim(),
-        email:
-          form.email.trim(),
+        first_name: form.first_name.trim(),
+        last_name: form.last_name.trim(),
+        phone_number: form.phone_number.trim(),
+        email: form.email.trim(),
       });
 
-      setAddSuccess(
-        "เพิ่มเจ้าหน้าที่สำเร็จ",
-      );
+      setAddSuccess("เพิ่มเจ้าหน้าที่สำเร็จ");
 
       setForm({
         username: "",
@@ -403,16 +326,9 @@ function CreateStaffPage() {
         email: "",
       });
 
-      await loadStaff(
-        search,
-        showInactive,
-      );
+      await loadStaff(search, showInactive);
     } catch (error: unknown) {
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "response" in error
-      ) {
+      if (typeof error === "object" && error !== null && "response" in error) {
         const response = (
           error as {
             response?: {
@@ -423,14 +339,9 @@ function CreateStaffPage() {
           }
         ).response;
 
-        setAddError(
-          response?.data?.detail ??
-            "ไม่สามารถเพิ่มเจ้าหน้าที่ได้",
-        );
+        setAddError(response?.data?.detail ?? "ไม่สามารถเพิ่มเจ้าหน้าที่ได้");
       } else {
-        setAddError(
-          "ไม่สามารถเพิ่มเจ้าหน้าที่ได้",
-        );
+        setAddError("ไม่สามารถเพิ่มเจ้าหน้าที่ได้");
       }
     } finally {
       setIsSubmitting(false);
@@ -440,17 +351,14 @@ function CreateStaffPage() {
   /* =========================
      Edit Staff
   ========================== */
-  const handleOpenEdit = (
-    staff: StaffResponse,
-  ) => {
+  const handleOpenEdit = (staff: StaffResponse) => {
     setSelectedStaff(staff);
 
     setEditForm({
       username: staff.username,
       first_name: staff.first_name,
       last_name: staff.last_name,
-      phone_number:
-        staff.phone_number,
+      phone_number: staff.phone_number,
       email: staff.email,
     });
 
@@ -466,10 +374,7 @@ function CreateStaffPage() {
     setEditError("");
   };
 
-  const handleEditChange = (
-    field: keyof StaffUpdateRequest,
-    value: string,
-  ) => {
+  const handleEditChange = (field: keyof StaffUpdateRequest, value: string) => {
     setEditForm((current) => ({
       ...current,
       [field]: value,
@@ -490,9 +395,7 @@ function CreateStaffPage() {
       !editForm.phone_number.trim() ||
       !editForm.email.trim()
     ) {
-      setEditError(
-        "กรุณากรอกข้อมูลให้ครบทุกช่อง",
-      );
+      setEditError("กรุณากรอกข้อมูลให้ครบทุกช่อง");
       return;
     }
 
@@ -500,35 +403,20 @@ function CreateStaffPage() {
       setIsEditing(true);
       setEditError("");
 
-      await updateStaff(
-        selectedStaff.id,
-        {
-          username:
-            editForm.username.trim(),
-          first_name:
-            editForm.first_name.trim(),
-          last_name:
-            editForm.last_name.trim(),
-          phone_number:
-            editForm.phone_number.trim(),
-          email:
-            editForm.email.trim(),
-        },
-      );
+      await updateStaff(selectedStaff.id, {
+        username: editForm.username.trim(),
+        first_name: editForm.first_name.trim(),
+        last_name: editForm.last_name.trim(),
+        phone_number: editForm.phone_number.trim(),
+        email: editForm.email.trim(),
+      });
 
       setSelectedStaff(null);
       setEditError("");
 
-      await loadStaff(
-        search,
-        showInactive,
-      );
+      await loadStaff(search, showInactive);
     } catch (error: unknown) {
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "response" in error
-      ) {
+      if (typeof error === "object" && error !== null && "response" in error) {
         const response = (
           error as {
             response?: {
@@ -540,13 +428,10 @@ function CreateStaffPage() {
         ).response;
 
         setEditError(
-          response?.data?.detail ??
-            "ไม่สามารถแก้ไขข้อมูลเจ้าหน้าที่ได้",
+          response?.data?.detail ?? "ไม่สามารถแก้ไขข้อมูลเจ้าหน้าที่ได้",
         );
       } else {
-        setEditError(
-          "ไม่สามารถแก้ไขข้อมูลเจ้าหน้าที่ได้",
-        );
+        setEditError("ไม่สามารถแก้ไขข้อมูลเจ้าหน้าที่ได้");
       }
     } finally {
       setIsEditing(false);
@@ -556,9 +441,7 @@ function CreateStaffPage() {
   /* =========================
      Deactivate Staff
   ========================== */
-  const handleOpenDeactivate = (
-    staff: StaffResponse,
-  ) => {
+  const handleOpenDeactivate = (staff: StaffResponse) => {
     setSelectedDeactivateStaff(staff);
     setDeactivatePassword("");
     setDeactivateError("");
@@ -580,9 +463,7 @@ function CreateStaffPage() {
     }
 
     if (!deactivatePassword.trim()) {
-      setDeactivateError(
-        "กรุณากรอกรหัสผ่านเจ้าหน้าที่",
-      );
+      setDeactivateError("กรุณากรอกรหัสผ่านเจ้าหน้าที่");
       return;
     }
 
@@ -591,27 +472,16 @@ function CreateStaffPage() {
       setDeactivateError("");
       setErrorMessage("");
 
-      await deactivateStaff(
-        selectedDeactivateStaff.id,
-        deactivatePassword,
-      );
+      await deactivateStaff(selectedDeactivateStaff.id, deactivatePassword);
 
       setSelectedDeactivateStaff(null);
       setDeactivatePassword("");
 
       setStaffList((current) =>
-        current.filter(
-          (item) =>
-            item.id !==
-            selectedDeactivateStaff.id,
-        ),
+        current.filter((item) => item.id !== selectedDeactivateStaff.id),
       );
     } catch (error: unknown) {
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "response" in error
-      ) {
+      if (typeof error === "object" && error !== null && "response" in error) {
         const response = (
           error as {
             response?: {
@@ -627,9 +497,7 @@ function CreateStaffPage() {
             "รหัสผ่านไม่ถูกต้อง หรือไม่สามารถปิดใช้งานเจ้าหน้าที่ได้",
         );
       } else {
-        setDeactivateError(
-          "ไม่สามารถปิดใช้งานเจ้าหน้าที่ได้",
-        );
+        setDeactivateError("ไม่สามารถปิดใช้งานเจ้าหน้าที่ได้");
       }
     } finally {
       setIsDeactivating(false);
@@ -639,9 +507,7 @@ function CreateStaffPage() {
   /* =========================
      Reactivate Staff
   ========================== */
-  const handleOpenReactivate = (
-    staff: StaffResponse,
-  ) => {
+  const handleOpenReactivate = (staff: StaffResponse) => {
     setSelectedReactivateStaff(staff);
     setReactivatePassword("");
     setReactivateError("");
@@ -663,9 +529,7 @@ function CreateStaffPage() {
     }
 
     if (!reactivatePassword.trim()) {
-      setReactivateError(
-        "กรุณากรอกรหัสผ่านเจ้าหน้าที่",
-      );
+      setReactivateError("กรุณากรอกรหัสผ่านเจ้าหน้าที่");
       return;
     }
 
@@ -674,27 +538,16 @@ function CreateStaffPage() {
       setReactivateError("");
       setErrorMessage("");
 
-      await reactivateStaff(
-        selectedReactivateStaff.id,
-        reactivatePassword,
-      );
+      await reactivateStaff(selectedReactivateStaff.id, reactivatePassword);
 
       setSelectedReactivateStaff(null);
       setReactivatePassword("");
 
       setStaffList((current) =>
-        current.filter(
-          (item) =>
-            item.id !==
-            selectedReactivateStaff.id,
-        ),
+        current.filter((item) => item.id !== selectedReactivateStaff.id),
       );
     } catch (error: unknown) {
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "response" in error
-      ) {
+      if (typeof error === "object" && error !== null && "response" in error) {
         const response = (
           error as {
             response?: {
@@ -710,54 +563,38 @@ function CreateStaffPage() {
             "รหัสผ่านไม่ถูกต้อง หรือไม่สามารถเปิดใช้งานเจ้าหน้าที่ได้",
         );
       } else {
-        setReactivateError(
-          "ไม่สามารถเปิดใช้งานเจ้าหน้าที่ได้",
-        );
+        setReactivateError("ไม่สามารถเปิดใช้งานเจ้าหน้าที่ได้");
       }
     } finally {
       setIsReactivating(false);
     }
   };
 
-
   /* =========================
      Render
   ========================== */
   return (
     <main className="doctor-page">
-      <style>
-        {staffModalStyle}
-      </style>
+      <style>{staffModalStyle}</style>
 
-      
       {/* =========================
           Main Content
       ========================== */}
       <section className="doctor-content">
         <header className="doctor-header">
           <div>
-            <span className="page-eyebrow">
-              CareFlow Hospital System
-            </span>
+            <span className="page-eyebrow">CareFlow Hospital System</span>
 
-            <h1>
-              จัดการเจ้าหน้าที่
-            </h1>
+            <h1>จัดการเจ้าหน้าที่</h1>
 
-            <p>
-              จัดการข้อมูลเจ้าหน้าที่
-              และตรวจสอบรายชื่อเจ้าหน้าที่
-              ในระบบ
-            </p>
+            <p>จัดการข้อมูลเจ้าหน้าที่ และตรวจสอบรายชื่อเจ้าหน้าที่ ในระบบ</p>
           </div>
 
           <div className="doctor-header-right">
             <button
               type="button"
               className="action-button primary"
-              onClick={
-                handleOpenAdd
-              }
+              onClick={handleOpenAdd}
             >
               + เพิ่มเจ้าหน้าที่ใหม่
             </button>
@@ -771,86 +608,57 @@ function CreateStaffPage() {
           <div className="current-patient-card">
             <div className="current-patient-header">
               <div>
-                <span className="section-eyebrow">
-                  การจัดการเจ้าหน้าที่
-                </span>
+                <span className="section-eyebrow">การจัดการเจ้าหน้าที่</span>
 
-                <h2>
-                  ค้นหาเจ้าหน้าที่
-                </h2>
+                <h2>ค้นหาเจ้าหน้าที่</h2>
 
-                <p>
-                  ค้นหาจากชื่อเจ้าหน้าที่
-                  หรือชื่อผู้ใช้
-                </p>
+                <p>ค้นหาจากชื่อเจ้าหน้าที่ หรือชื่อผู้ใช้</p>
               </div>
             </div>
 
             <div
               style={{
-                padding:
-                  "22px 24px 24px",
+                padding: "22px 24px 24px",
               }}
             >
               <div
                 style={{
                   display: "flex",
                   gap: "10px",
-                  alignItems:
-                    "center",
-                  flexWrap:
-                    "wrap",
+                  alignItems: "center",
+                  flexWrap: "wrap",
                 }}
               >
                 <input
                   type="text"
                   value={search}
                   placeholder="ค้นหาชื่อเจ้าหน้าที่หรือชื่อผู้ใช้"
-                  onChange={(event) =>
-                    handleSearchChange(
-                      event.target.value,
-                    )
-                  }
+                  onChange={(event) => handleSearchChange(event.target.value)}
                   onKeyDown={(event) => {
-                    if (
-                      event.key ===
-                      "Enter"
-                    ) {
+                    if (event.key === "Enter") {
                       handleSearch();
                     }
                   }}
                   style={{
-                    flex:
-                      "1 1 360px",
+                    flex: "1 1 360px",
                     minWidth: 0,
                     height: "42px",
-                    boxSizing:
-                      "border-box",
-                    padding:
-                      "0 12px",
-                    border:
-                      "1px solid var(--border)",
-                    borderRadius:
-                      "7px",
-                    outline:
-                      "none",
-                    background:
-                      "var(--surface)",
-                    color:
-                      "var(--text)",
-                    fontFamily:
-                      "var(--font)",
-                    fontSize:
-                      "14px",
+                    boxSizing: "border-box",
+                    padding: "0 12px",
+                    border: "1px solid var(--border)",
+                    borderRadius: "7px",
+                    outline: "none",
+                    background: "var(--surface)",
+                    color: "var(--text)",
+                    fontFamily: "var(--font)",
+                    fontSize: "14px",
                   }}
                 />
 
                 <button
                   type="button"
                   className="action-button primary"
-                  onClick={
-                    handleSearch
-                  }
+                  onClick={handleSearch}
                 >
                   ค้นหา
                 </button>
@@ -859,9 +667,7 @@ function CreateStaffPage() {
                   <button
                     type="button"
                     className="action-button secondary"
-                    onClick={
-                      handleClearSearch
-                    }
+                    onClick={handleClearSearch}
                   >
                     ล้าง
                   </button>
@@ -872,16 +678,13 @@ function CreateStaffPage() {
                 style={{
                   marginTop: "14px",
                   display: "flex",
-                  justifyContent:
-                    "flex-start",
+                  justifyContent: "flex-start",
                 }}
               >
                 <button
                   type="button"
                   className="action-button secondary"
-                  onClick={
-                    handleToggleInactive
-                  }
+                  onClick={handleToggleInactive}
                 >
                   {showInactive
                     ? "แสดงเจ้าหน้าที่ที่ใช้งาน"
@@ -893,10 +696,7 @@ function CreateStaffPage() {
         </section>
 
         {errorMessage && (
-          <div
-            className="doctor-alert"
-            role="alert"
-          >
+          <div className="doctor-alert" role="alert">
             {errorMessage}
           </div>
         )}
@@ -908,9 +708,7 @@ function CreateStaffPage() {
           <div className="current-patient-card">
             <div className="current-patient-header">
               <div>
-                <span className="section-eyebrow">
-                  รายชื่อเจ้าหน้าที่
-                </span>
+                <span className="section-eyebrow">รายชื่อเจ้าหน้าที่</span>
 
                 <h2>
                   {search
@@ -920,40 +718,28 @@ function CreateStaffPage() {
                       : "เจ้าหน้าที่ที่ใช้งาน"}
                 </h2>
 
-                <p>
-                  {staffList.length}{" "}
-                  รายการ
-                </p>
+                <p>{staffList.length} รายการ</p>
               </div>
             </div>
 
             {isLoading ? (
               <div
                 style={{
-                  padding:
-                    "32px 24px",
-                  textAlign:
-                    "center",
-                  color:
-                    "var(--muted)",
-                  fontSize:
-                    "14px",
+                  padding: "32px 24px",
+                  textAlign: "center",
+                  color: "var(--muted)",
+                  fontSize: "14px",
                 }}
               >
                 กำลังโหลดรายการเจ้าหน้าที่...
               </div>
-            ) : staffList.length ===
-              0 ? (
+            ) : staffList.length === 0 ? (
               <div
                 style={{
-                  padding:
-                    "32px 24px",
-                  textAlign:
-                    "center",
-                  color:
-                    "var(--muted)",
-                  fontSize:
-                    "14px",
+                  padding: "32px 24px",
+                  textAlign: "center",
+                  color: "var(--muted)",
+                  fontSize: "14px",
                 }}
               >
                 {search
@@ -966,144 +752,94 @@ function CreateStaffPage() {
               <div
                 style={{
                   display: "flex",
-                  flexDirection:
-                    "column",
+                  flexDirection: "column",
                 }}
               >
-                {staffList.map(
-                  (staff) => (
-                    <article
-                      key={staff.id}
+                {staffList.map((staff) => (
+                  <article
+                    key={staff.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "24px",
+                      padding: "18px 24px",
+                      borderTop: "1px solid var(--border)",
+                    }}
+                  >
+                    <div
                       style={{
-                        display:
-                          "flex",
-                        alignItems:
-                          "center",
-                        justifyContent:
-                          "space-between",
-                        gap: "24px",
-                        padding:
-                          "18px 24px",
-                        borderTop:
-                          "1px solid var(--border)",
+                        minWidth: 0,
+                        flex: 1,
                       }}
                     >
-                      <div
+                      <strong
                         style={{
-                          minWidth: 0,
-                          flex: 1,
+                          display: "block",
+                          color: "var(--text)",
+                          fontSize: "15px",
+                          fontWeight: 600,
+                          marginBottom: "8px",
                         }}
                       >
-                        <strong
-                          style={{
-                            display:
-                              "block",
-                            color:
-                              "var(--text)",
-                            fontSize:
-                              "15px",
-                            fontWeight:
-                              600,
-                            marginBottom:
-                              "8px",
-                          }}
-                        >
-                          {
-                            staff.first_name
-                          }{" "}
-                          {
-                            staff.last_name
-                          }
-                        </strong>
+                        {staff.first_name} {staff.last_name}
+                      </strong>
 
-                        <div
-                          style={{
-                            display:
-                              "flex",
-                            flexWrap:
-                              "wrap",
-                            gap:
-                              "6px 22px",
-                            color:
-                              "var(--muted)",
-                            fontSize:
-                              "13px",
-                            lineHeight:
-                              "1.6",
-                          }}
-                        >
-                          <span>
-                            ชื่อผู้ใช้:{" "}
-                            {
-                              staff.username
-                            }
-                          </span>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "6px 22px",
+                          color: "var(--muted)",
+                          fontSize: "13px",
+                          lineHeight: "1.6",
+                        }}
+                      >
+                        <span>ชื่อผู้ใช้: {staff.username}</span>
 
-                          <span>
-                            อีเมล:{" "}
-                            {staff.email}
-                          </span>
+                        <span>อีเมล: {staff.email}</span>
 
-                          <span>
-                            เบอร์โทรศัพท์:{" "}
-                            {
-                              staff.phone_number
-                            }
-                          </span>
-                        </div>
+                        <span>เบอร์โทรศัพท์: {staff.phone_number}</span>
                       </div>
+                    </div>
 
-                      <div
-                        style={{
-                          display:
-                            "flex",
-                          gap: "8px",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {!showInactive ? (
-                          <>
-                            <button
-                              type="button"
-                              className="action-button secondary"
-                              onClick={() =>
-                                handleOpenEdit(
-                                  staff,
-                                )
-                              }
-                            >
-                              แก้ไข
-                            </button>
-
-                            <button
-                              type="button"
-                              className="action-button danger"
-                              onClick={() =>
-                                handleOpenDeactivate(
-                                  staff,
-                                )
-                              }
-                            >
-                              ปิดใช้งาน
-                            </button>
-                          </>
-                        ) : (
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {!showInactive ? (
+                        <>
                           <button
                             type="button"
-                            className="action-button primary"
-                            onClick={() =>
-                              handleOpenReactivate(
-                                staff,
-                              )
-                            }
+                            className="action-button secondary"
+                            onClick={() => handleOpenEdit(staff)}
                           >
-                            เปิดใช้งาน
+                            แก้ไข
                           </button>
-                        )}
-                      </div>
-                    </article>
-                  ),
-                )}
+
+                          <button
+                            type="button"
+                            className="action-button danger"
+                            onClick={() => handleOpenDeactivate(staff)}
+                          >
+                            ปิดใช้งาน
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          className="action-button primary"
+                          onClick={() => handleOpenReactivate(staff)}
+                        >
+                          เปิดใช้งาน
+                        </button>
+                      )}
+                    </div>
+                  </article>
+                ))}
               </div>
             )}
           </div>
@@ -1117,200 +853,162 @@ function CreateStaffPage() {
         <div
           className="doctor-modal-overlay"
           role="presentation"
-          onClick={
-            handleCloseAdd
-          }
+          onClick={handleCloseAdd}
         >
           <div
             className="doctor-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="add-staff-title"
-            onClick={(event) =>
-              event.stopPropagation()
-            }
+            onClick={(event) => event.stopPropagation()}
             style={{
-              maxWidth:
-                "680px",
+              maxWidth: "680px",
               width: "calc(100% - 32px)",
             }}
           >
-            <div className="doctor-modal-icon">
-              ♙
-            </div>
+            <div className="doctor-modal-icon">♙</div>
 
-            <h2 id="add-staff-title">
-              เพิ่มเจ้าหน้าที่
-            </h2>
+            <h2 id="add-staff-title">เพิ่มเจ้าหน้าที่</h2>
 
-            <p>
-              กรุณากรอกข้อมูลเจ้าหน้าที่
-              ให้ครบถ้วน
-            </p>
+            <p>กรุณากรอกข้อมูลเจ้าหน้าที่ ให้ครบถ้วน</p>
 
-            <form
-              onSubmit={handleSubmit}
-            >
+            <form onSubmit={handleSubmit}>
               <div className="staff-modal-grid">
                 <div className="staff-modal-field">
-                  <label htmlFor="staff-username">
-                    ชื่อผู้ใช้
-                  </label>
+                  <label htmlFor="staff-username">ชื่อผู้ใช้</label>
 
                   <input
                     id="staff-username"
                     type="text"
-                    value={
-                      form.username
-                    }
+                    value={form.username}
                     onChange={(event) =>
-                      handleChange(
-                        "username",
-                        event.target.value,
-                      )
+                      handleChange("username", event.target.value)
                     }
-                    disabled={
-                      isSubmitting
-                    }
+                    disabled={isSubmitting}
                     autoComplete="username"
                   />
                 </div>
 
                 <div className="staff-modal-field">
-                  <label htmlFor="staff-password">
-                    รหัสผ่าน
-                  </label>
+                  <label htmlFor="staff-password">รหัสผ่าน</label>
 
-                  <input
-                    id="staff-password"
-                    type="password"
-                    value={
-                      form.password
-                    }
-                    onChange={(event) =>
-                      handleChange(
-                        "password",
-                        event.target.value,
-                      )
-                    }
-                    disabled={
-                      isSubmitting
-                    }
-                    autoComplete="new-password"
-                  />
+                  <div style={{ position: "relative" }}>
+                    <input
+                      id="staff-password"
+                      type={showAddPassword ? "text" : "password"}
+                      value={form.password}
+                      onChange={(event) =>
+                        handleChange("password", event.target.value)
+                      }
+                      disabled={isSubmitting}
+                      autoComplete="new-password"
+                      style={{
+                        paddingRight: "42px",
+                      }}
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowAddPassword((previous) => !previous)
+                      }
+                      disabled={isSubmitting}
+                      aria-label={
+                        showAddPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"
+                      }
+                      style={{
+                        position: "absolute",
+                        right: "10px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        border: "none",
+                        background: "transparent",
+                        padding: "4px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "var(--muted)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {showAddPassword ? (
+                        <EyeOff size={19} />
+                      ) : (
+                        <Eye size={19} />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="staff-modal-field">
-                  <label htmlFor="staff-first-name">
-                    ชื่อ
-                  </label>
+                  <label htmlFor="staff-first-name">ชื่อ</label>
 
                   <input
                     id="staff-first-name"
                     type="text"
-                    value={
-                      form.first_name
-                    }
+                    value={form.first_name}
                     onChange={(event) =>
-                      handleChange(
-                        "first_name",
-                        event.target.value,
-                      )
+                      handleChange("first_name", event.target.value)
                     }
-                    disabled={
-                      isSubmitting
-                    }
+                    disabled={isSubmitting}
                     autoComplete="given-name"
                   />
                 </div>
 
                 <div className="staff-modal-field">
-                  <label htmlFor="staff-last-name">
-                    นามสกุล
-                  </label>
+                  <label htmlFor="staff-last-name">นามสกุล</label>
 
                   <input
                     id="staff-last-name"
                     type="text"
-                    value={
-                      form.last_name
-                    }
+                    value={form.last_name}
                     onChange={(event) =>
-                      handleChange(
-                        "last_name",
-                        event.target.value,
-                      )
+                      handleChange("last_name", event.target.value)
                     }
-                    disabled={
-                      isSubmitting
-                    }
+                    disabled={isSubmitting}
                     autoComplete="family-name"
                   />
                 </div>
 
                 <div className="staff-modal-field">
-                  <label htmlFor="staff-phone">
-                    เบอร์โทรศัพท์
-                  </label>
+                  <label htmlFor="staff-phone">เบอร์โทรศัพท์</label>
 
                   <input
                     id="staff-phone"
                     type="tel"
-                    value={
-                      form.phone_number
-                    }
+                    value={form.phone_number}
                     onChange={(event) =>
-                      handleChange(
-                        "phone_number",
-                        event.target.value,
-                      )
+                      handleChange("phone_number", event.target.value)
                     }
-                    disabled={
-                      isSubmitting
-                    }
+                    disabled={isSubmitting}
                     autoComplete="tel"
                   />
                 </div>
 
                 <div className="staff-modal-field">
-                  <label htmlFor="staff-email">
-                    อีเมล
-                  </label>
+                  <label htmlFor="staff-email">อีเมล</label>
 
                   <input
                     id="staff-email"
                     type="email"
-                    value={
-                      form.email
-                    }
+                    value={form.email}
                     onChange={(event) =>
-                      handleChange(
-                        "email",
-                        event.target.value,
-                      )
+                      handleChange("email", event.target.value)
                     }
-                    disabled={
-                      isSubmitting
-                    }
+                    disabled={isSubmitting}
                     autoComplete="email"
                   />
                 </div>
               </div>
 
               {addError && (
-                <p
-                  className="staff-modal-error"
-                  role="alert"
-                >
+                <p className="staff-modal-error" role="alert">
                   {addError}
                 </p>
               )}
 
               {addSuccess && (
-                <p
-                  className="staff-modal-success"
-                  role="status"
-                >
+                <p className="staff-modal-success" role="status">
                   {addSuccess}
                 </p>
               )}
@@ -1319,9 +1017,7 @@ function CreateStaffPage() {
                 <button
                   type="submit"
                   className="action-button primary"
-                  disabled={
-                    isSubmitting
-                  }
+                  disabled={isSubmitting}
                 >
                   {isSubmitting
                     ? "กำลังเพิ่มเจ้าหน้าที่..."
@@ -1331,12 +1027,8 @@ function CreateStaffPage() {
                 <button
                   type="button"
                   className="action-button secondary"
-                  onClick={
-                    handleCloseAdd
-                  }
-                  disabled={
-                    isSubmitting
-                  }
+                  onClick={handleCloseAdd}
+                  disabled={isSubmitting}
                 >
                   ยกเลิก
                 </button>
@@ -1353,41 +1045,28 @@ function CreateStaffPage() {
         <div
           className="doctor-modal-overlay"
           role="presentation"
-          onClick={
-            handleCloseEdit
-          }
+          onClick={handleCloseEdit}
         >
           <div
             className="doctor-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="edit-staff-title"
-            onClick={(event) =>
-              event.stopPropagation()
-            }
+            onClick={(event) => event.stopPropagation()}
             style={{
-              maxWidth:
-                "680px",
+              maxWidth: "680px",
               width: "calc(100% - 32px)",
             }}
           >
-            <div className="doctor-modal-icon">
-              ♙
-            </div>
+            <div className="doctor-modal-icon">♙</div>
 
-            <h2 id="edit-staff-title">
-              แก้ไขข้อมูลเจ้าหน้าที่
-            </h2>
+            <h2 id="edit-staff-title">แก้ไขข้อมูลเจ้าหน้าที่</h2>
 
-            <p>
-              แก้ไขข้อมูลเจ้าหน้าที่
-            </p>
+            <p>แก้ไขข้อมูลเจ้าหน้าที่</p>
 
             <div className="staff-modal-grid">
               <div className="staff-modal-field full-width">
-                <label htmlFor="edit-staff-username">
-                  ชื่อผู้ใช้
-                </label>
+                <label htmlFor="edit-staff-username">ชื่อผู้ใช้</label>
 
                 <input
                   id="edit-staff-username"
@@ -1395,18 +1074,13 @@ function CreateStaffPage() {
                   value={editForm.username}
                   disabled={isEditing}
                   onChange={(event) =>
-                    handleEditChange(
-                      "username",
-                      event.target.value,
-                    )
+                    handleEditChange("username", event.target.value)
                   }
                 />
               </div>
 
               <div className="staff-modal-field">
-                <label htmlFor="edit-staff-first-name">
-                  ชื่อ
-                </label>
+                <label htmlFor="edit-staff-first-name">ชื่อ</label>
 
                 <input
                   id="edit-staff-first-name"
@@ -1414,18 +1088,13 @@ function CreateStaffPage() {
                   value={editForm.first_name}
                   disabled={isEditing}
                   onChange={(event) =>
-                    handleEditChange(
-                      "first_name",
-                      event.target.value,
-                    )
+                    handleEditChange("first_name", event.target.value)
                   }
                 />
               </div>
 
               <div className="staff-modal-field">
-                <label htmlFor="edit-staff-last-name">
-                  นามสกุล
-                </label>
+                <label htmlFor="edit-staff-last-name">นามสกุล</label>
 
                 <input
                   id="edit-staff-last-name"
@@ -1433,18 +1102,13 @@ function CreateStaffPage() {
                   value={editForm.last_name}
                   disabled={isEditing}
                   onChange={(event) =>
-                    handleEditChange(
-                      "last_name",
-                      event.target.value,
-                    )
+                    handleEditChange("last_name", event.target.value)
                   }
                 />
               </div>
 
               <div className="staff-modal-field">
-                <label htmlFor="edit-staff-phone">
-                  เบอร์โทรศัพท์
-                </label>
+                <label htmlFor="edit-staff-phone">เบอร์โทรศัพท์</label>
 
                 <input
                   id="edit-staff-phone"
@@ -1452,18 +1116,13 @@ function CreateStaffPage() {
                   value={editForm.phone_number}
                   disabled={isEditing}
                   onChange={(event) =>
-                    handleEditChange(
-                      "phone_number",
-                      event.target.value,
-                    )
+                    handleEditChange("phone_number", event.target.value)
                   }
                 />
               </div>
 
               <div className="staff-modal-field">
-                <label htmlFor="edit-staff-email">
-                  อีเมล
-                </label>
+                <label htmlFor="edit-staff-email">อีเมล</label>
 
                 <input
                   id="edit-staff-email"
@@ -1471,20 +1130,14 @@ function CreateStaffPage() {
                   value={editForm.email}
                   disabled={isEditing}
                   onChange={(event) =>
-                    handleEditChange(
-                      "email",
-                      event.target.value,
-                    )
+                    handleEditChange("email", event.target.value)
                   }
                 />
               </div>
             </div>
 
             {editError && (
-              <p
-                className="staff-modal-error"
-                role="alert"
-              >
+              <p className="staff-modal-error" role="alert">
                 {editError}
               </p>
             )}
@@ -1493,27 +1146,17 @@ function CreateStaffPage() {
               <button
                 type="button"
                 className="action-button primary"
-                onClick={() =>
-                  void handleUpdateStaff()
-                }
-                disabled={
-                  isEditing
-                }
+                onClick={() => void handleUpdateStaff()}
+                disabled={isEditing}
               >
-                {isEditing
-                  ? "กำลังบันทึก..."
-                  : "บันทึก"}
+                {isEditing ? "กำลังบันทึก..." : "บันทึก"}
               </button>
 
               <button
                 type="button"
                 className="action-button secondary"
-                onClick={
-                  handleCloseEdit
-                }
-                disabled={
-                  isEditing
-                }
+                onClick={handleCloseEdit}
+                disabled={isEditing}
               >
                 ยกเลิก
               </button>
@@ -1529,18 +1172,14 @@ function CreateStaffPage() {
         <div
           className="doctor-modal-overlay"
           role="presentation"
-          onClick={
-            handleCloseDeactivate
-          }
+          onClick={handleCloseDeactivate}
         >
           <div
             className="doctor-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="deactivate-staff-title"
-            onClick={(event) =>
-              event.stopPropagation()
-            }
+            onClick={(event) => event.stopPropagation()}
             style={{
               width: "calc(100% - 32px)",
               maxWidth: "520px",
@@ -1550,19 +1189,13 @@ function CreateStaffPage() {
               <AlertTriangle size={20} />
             </div>
 
-            <h2 id="deactivate-staff-title">
-              ปิดใช้งานเจ้าหน้าที่
-            </h2>
+            <h2 id="deactivate-staff-title">ปิดใช้งานเจ้าหน้าที่</h2>
 
             <p>
               ต้องการปิดใช้งานเจ้าหน้าที่{" "}
               <strong>
-                {
-                  selectedDeactivateStaff.first_name
-                }{" "}
-                {
-                  selectedDeactivateStaff.last_name
-                }
+                {selectedDeactivateStaff.first_name}{" "}
+                {selectedDeactivateStaff.last_name}
               </strong>{" "}
               ใช่หรือไม่?
             </p>
@@ -1586,28 +1219,19 @@ function CreateStaffPage() {
                 <input
                   id="deactivate-staff-password"
                   type="password"
-                  value={
-                    deactivatePassword
-                  }
+                  value={deactivatePassword}
                   placeholder="กรอกรหัสผ่าน"
-                  disabled={
-                    isDeactivating
-                  }
+                  disabled={isDeactivating}
                   autoComplete="current-password"
                   onChange={(event) => {
-                    setDeactivatePassword(
-                      event.target.value,
-                    );
+                    setDeactivatePassword(event.target.value);
                     setDeactivateError("");
                   }}
                 />
               </div>
 
               {deactivateError && (
-                <p
-                  className="staff-modal-error"
-                  role="alert"
-                >
+                <p className="staff-modal-error" role="alert">
                   {deactivateError}
                 </p>
               )}
@@ -1616,24 +1240,16 @@ function CreateStaffPage() {
                 <button
                   type="submit"
                   className="action-button danger"
-                  disabled={
-                    isDeactivating
-                  }
+                  disabled={isDeactivating}
                 >
-                  {isDeactivating
-                    ? "กำลังปิดใช้งาน..."
-                    : "ยืนยันการปิดใช้งาน"}
+                  {isDeactivating ? "กำลังปิดใช้งาน..." : "ยืนยันการปิดใช้งาน"}
                 </button>
 
                 <button
                   type="button"
                   className="action-button secondary"
-                  onClick={
-                    handleCloseDeactivate
-                  }
-                  disabled={
-                    isDeactivating
-                  }
+                  onClick={handleCloseDeactivate}
+                  disabled={isDeactivating}
                 >
                   ยกเลิก
                 </button>
@@ -1650,40 +1266,28 @@ function CreateStaffPage() {
         <div
           className="doctor-modal-overlay"
           role="presentation"
-          onClick={
-            handleCloseReactivate
-          }
+          onClick={handleCloseReactivate}
         >
           <div
             className="doctor-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="reactivate-staff-title"
-            onClick={(event) =>
-              event.stopPropagation()
-            }
+            onClick={(event) => event.stopPropagation()}
             style={{
               width: "calc(100% - 32px)",
               maxWidth: "520px",
             }}
           >
-            <div className="doctor-modal-icon">
-              ♙
-            </div>
+            <div className="doctor-modal-icon">♙</div>
 
-            <h2 id="reactivate-staff-title">
-              เปิดใช้งานเจ้าหน้าที่
-            </h2>
+            <h2 id="reactivate-staff-title">เปิดใช้งานเจ้าหน้าที่</h2>
 
             <p>
               ต้องการเปิดใช้งานเจ้าหน้าที่{" "}
               <strong>
-                {
-                  selectedReactivateStaff.first_name
-                }{" "}
-                {
-                  selectedReactivateStaff.last_name
-                }
+                {selectedReactivateStaff.first_name}{" "}
+                {selectedReactivateStaff.last_name}
               </strong>{" "}
               ใช่หรือไม่?
             </p>
@@ -1707,28 +1311,19 @@ function CreateStaffPage() {
                 <input
                   id="reactivate-staff-password"
                   type="password"
-                  value={
-                    reactivatePassword
-                  }
+                  value={reactivatePassword}
                   placeholder="กรอกรหัสผ่าน"
-                  disabled={
-                    isReactivating
-                  }
+                  disabled={isReactivating}
                   autoComplete="current-password"
                   onChange={(event) => {
-                    setReactivatePassword(
-                      event.target.value,
-                    );
+                    setReactivatePassword(event.target.value);
                     setReactivateError("");
                   }}
                 />
               </div>
 
               {reactivateError && (
-                <p
-                  className="staff-modal-error"
-                  role="alert"
-                >
+                <p className="staff-modal-error" role="alert">
                   {reactivateError}
                 </p>
               )}
@@ -1737,9 +1332,7 @@ function CreateStaffPage() {
                 <button
                   type="submit"
                   className="action-button primary"
-                  disabled={
-                    isReactivating
-                  }
+                  disabled={isReactivating}
                 >
                   {isReactivating
                     ? "กำลังเปิดใช้งาน..."
@@ -1749,12 +1342,8 @@ function CreateStaffPage() {
                 <button
                   type="button"
                   className="action-button secondary"
-                  onClick={
-                    handleCloseReactivate
-                  }
-                  disabled={
-                    isReactivating
-                  }
+                  onClick={handleCloseReactivate}
+                  disabled={isReactivating}
                 >
                   ยกเลิก
                 </button>
@@ -1763,7 +1352,6 @@ function CreateStaffPage() {
           </div>
         </div>
       )}
-
     </main>
   );
 }

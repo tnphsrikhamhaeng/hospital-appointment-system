@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getValidationError } from "../../../utils/validation";
 import { useValidationFocus } from "../../../hooks/useValidationFocus";
 import { getValidationInputStyle } from "../../../utils/validationStyle";
-
+import { Eye, EyeOff } from "lucide-react";
 import {
   createDoctor,
   uploadDoctorImage,
@@ -89,6 +89,8 @@ function CreateDoctorPage() {
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(
     null,
   );
+
+  const [showPassword, setShowPassword] = useState(false);
 
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -452,17 +454,52 @@ function CreateDoctorPage() {
                     Password
                   </label>
 
-                  <input
-                    ref={(element) => registerField("password", element)}
-                    id="password"
-                    type="password"
-                    value={form.password}
-                    onChange={(event) =>
-                      handleChange("password", event.target.value)
-                    }
-                    disabled={isSubmitting || isUploadingImage}
-                    style={getInputValidationStyle("password", errorField)}
-                  />
+                  <div
+                    style={{
+                      position: "relative",
+                      width: "100%",
+                    }}
+                  >
+                    <input
+                      ref={(element) => registerField("password", element)}
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={form.password}
+                      onChange={(event) =>
+                        handleChange("password", event.target.value)
+                      }
+                      disabled={isSubmitting || isUploadingImage}
+                      style={{
+                        ...getInputValidationStyle("password", errorField),
+                        paddingRight: "42px",
+                      }}
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((previous) => !previous)}
+                      disabled={isSubmitting || isUploadingImage}
+                      aria-label={
+                        showPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"
+                      }
+                      style={{
+                        position: "absolute",
+                        right: "10px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        border: "none",
+                        background: "transparent",
+                        padding: "4px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "var(--muted)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                    </button>
+                  </div>
                 </div>
               </div>
             </section>
