@@ -40,8 +40,32 @@ Backend มี Dependency สำหรับระบุ Current User และ�
 ## 8. CORS
 Backend กำหนด CORS สำหรับ Origin ที่อนุญาตให้เรียก API รวมถึง Web Application ที่ Deploy แล้ว
 
-## 9. File Upload
-Backend สร้าง Directory app/uploads หากยังไม่มี และ Mount เป็น Static Files ที่ Path /uploads
+## 9. Image Upload and Cloudinary
+Backend ใช้ Cloudinary สำหรับจัดเก็บรูปภาพแทนการพึ่งพาไฟล์ใน Local Filesystem ของ Render ซึ่งอาจไม่คงอยู่หลัง Restart หรือ Deploy
+
+Endpoints:
+~~~text
+POST /uploads/department-image
+POST /uploads/doctor-image
+~~~
+
+ทั้งสอง Endpoint รับรูปผ่าน `multipart/form-data` ใน field `file` และส่ง Response รูปแบบ:
+~~~json
+{
+  "image_url": "https://res.cloudinary.com/..."
+}
+~~~
+
+รองรับไฟล์ JPEG, PNG และ WEBP โดยจำกัดขนาดไม่เกิน 5 MB รูปแผนกจะถูกจัดเก็บในโฟลเดอร์ Cloudinary `careflow/departments` และรูปแพทย์ใน `careflow/doctors`
+
+Backend อ่านค่า Cloudinary จาก Environment Variables ต่อไปนี้:
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+
+ห้ามใส่ API Secret ใน Source Code, Frontend หรือ Repository ให้กำหนดค่าผ่าน Environment ของ Backend Service บน Render แทน
+
+เมื่ออัปโหลดสำเร็จ Backend ส่ง Secure URL กลับไปให้ Frontend ซึ่งนำ URL ไปบันทึกใน `image_url` ของข้อมูลแผนกหรือแพทย์ตามกระบวนการของระบบ
 
 ## 10. Database Session
 Database Session ถูกสร้างผ่าน SessionLocal และส่งให้ Endpoint ผ่าน get_db() หลัง Request เสร็จสิ้น Session จะถูกปิด
