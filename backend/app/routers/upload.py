@@ -1,27 +1,18 @@
+
 from __future__ import annotations
 
+import os
 import uuid
-from pathlib import Path
+from io import BytesIO
 
-from fastapi import APIRouter, File, HTTPException, Request, UploadFile, status
+import cloudinary
+import cloudinary.uploader
+from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
 
 router = APIRouter(
     prefix="/uploads",
     tags=["Uploads"],
-)
-
-
-DEPARTMENT_UPLOAD_DIR = (
-    Path(__file__).resolve().parent.parent
-    / "uploads"
-    / "departments"
-)
-
-DOCTOR_UPLOAD_DIR = (
-    Path(__file__).resolve().parent.parent
-    / "uploads"
-    / "doctors"
 )
 
 ALLOWED_CONTENT_TYPES = {
@@ -33,47 +24,57 @@ ALLOWED_CONTENT_TYPES = {
 MAX_FILE_SIZE = 5 * 1024 * 1024
 
 
-async def _save_image(
+async def _upload_image(
     file: UploadFile,
-    upload_dir: Path,
+    folder: str,
 ) -> str:
     if file.content_type not in ALLOWED_CONTENT_TYPES:
+        await file.close()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="รองรับเฉพาะไฟล์ JPG, PNG และ WEBP",
         )
 
-    extension = ALLOWED_CONTENT_TYPES[file.content_type]
-
-    upload_dir.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    filename = f"{uuid.uuid4()}{extension}"
-    file_path = upload_dir / filename
-
-    total_size = 0
-
     try:
-        with file_path.open("wb") as output_file:
-            while chunk := await file.read(1024 * 1024):
-                total_size += len(chunk)
-
-                if total_size > MAX_FILE_SIZE:
-                    file_path.unlink(missing_ok=True)
-
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="ขนาดรูปภาพต้องไม่เกิน 5 MB",
-                    )
-
-                output_file.write(chunk)
-
+        contents = await file.read(MAX_FILE_SIZE + 1)
     finally:
         await file.close()
 
-    return filename
+    if len(contents) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="ขนาดรูปภาพต้องไม่เกิน 5 MB",
+        )
+
+    cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME")
+    api_key = os.getenv("CLOUDINARY_API_KEY")
+    api_secret = os.getenv("CLOUDINARY_API_SECRET")
+
+    if not all([cloud_name, api_key, api_secret]):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Cloudinary configuration is missing",
+        )
+
+    try:
+        result = cloudinary.uploader.upload(
+            BytesIO(contents),
+            cloud_name=cloud_name,
+            api_key=api_key,
+            api_secret=api_secret,
+            folder=folder,
+            public_id=str(uuid.uuid4()),
+            resource_type="image",
+            overwrite=False,
+        )
+
+        return result["secure_url"]
+
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="ไม่สามารถอัปโหลดรูปภาพได้",
+        )
 
 
 @router.post(
@@ -81,16 +82,11 @@ async def _save_image(
     status_code=status.HTTP_201_CREATED,
 )
 async def upload_department_image(
-    request: Request,
     file: UploadFile = File(...),
 ):
-    filename = await _save_image(
+    image_url = await _upload_image(
         file=file,
-        upload_dir=DEPARTMENT_UPLOAD_DIR,
-    )
-
-    image_url = (
-        f"{request.base_url}uploads/departments/{filename}"
+        folder="careflow/departments",
     )
 
     return {
@@ -103,16 +99,11 @@ async def upload_department_image(
     status_code=status.HTTP_201_CREATED,
 )
 async def upload_doctor_image(
-    request: Request,
     file: UploadFile = File(...),
 ):
-    filename = await _save_image(
+    image_url = await _upload_image(
         file=file,
-        upload_dir=DOCTOR_UPLOAD_DIR,
-    )
-
-    image_url = (
-        f"{request.base_url}uploads/doctors/{filename}"
+        folder="careflow/doctors",
     )
 
     return {

@@ -66,28 +66,6 @@ type ModalType =
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
-const getDepartmentImageUrl = (department: DepartmentResponse) => {
-  const name = department.name.trim();
-
-  if (name.includes("ทางเดินอาหาร")) {
-    return "/images/departments/gastroenterology_department.png";
-  }
-
-  if (name.includes("หัวใจ")) {
-    return "/images/departments/cardiology_department.png";
-  }
-
-  if (name.includes("ประสาท") || name.includes("ระบบประสาท")) {
-    return "/images/departments/neurology_department.png";
-  }
-
-  if (name.includes("อายุรกรรม")) {
-    return "/images/departments/internal_medicine_department.png";
-  }
-
-  return department.image_url;
-};
-
 const DepartmentManagementPage = () => {
   const [departments, setDepartments] = useState<DepartmentResponse[]>([]);
 
@@ -237,6 +215,10 @@ const DepartmentManagementPage = () => {
 
       event.target.value = "";
       return;
+    }
+
+    if (departmentImagePreview) {
+      URL.revokeObjectURL(departmentImagePreview);
     }
 
     setDepartmentImageFile(file);
@@ -640,6 +622,7 @@ const DepartmentManagementPage = () => {
   return (
     <>
       <style>{departmentModalStyle}</style>
+
       <main className="doctor-content">
         <header className="doctor-header">
           <div>
@@ -818,10 +801,6 @@ const DepartmentManagementPage = () => {
                     overflow: "hidden",
                   }}
                 >
-                  {/* =============================
-                          Department - Top
-                      ============================== */}
-
                   <div
                     style={{
                       display: "flex",
@@ -832,7 +811,7 @@ const DepartmentManagementPage = () => {
                   >
                     {department.image_url ? (
                       <img
-                        src={getDepartmentImageUrl(department)}
+                        src={department.image_url}
                         alt={department.name}
                         style={{
                           width: 88,
@@ -975,10 +954,6 @@ const DepartmentManagementPage = () => {
                       </div>
                     </div>
                   </div>
-
-                  {/* =============================
-    Specialization - Bottom
-============================= */}
 
                   <div
                     style={{
