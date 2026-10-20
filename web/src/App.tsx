@@ -8,6 +8,7 @@ import MedicalRecordPage from "./features/medical-record/pages/MedicalRecordPage
 import AppointmentPatientPage from "./features/appointment/pages/AppointmentPatientPage";
 import DoctorSchedulePage from "./features/doctor/pages/DoctorSchedulePage";
 import StaffCheckInPage from "./features/staff/pages/StaffCheckInPage";
+import StaffAppointmentsPage from "./features/staff/pages/StaffAppointmentsPage";
 import CreateStaffPage from "./features/staff/pages/CreateStaffPage";
 import CreateDoctorPage from "./features/doctor/pages/CreateDoctorPage";
 import DoctorListPage from "./features/doctor/pages/DoctorListPage";
@@ -82,6 +83,8 @@ function AppRoutes({ location }: { location: ReturnType<typeof useLocation> }) {
         }
       >
         <Route index element={<StaffCheckInPage />} />
+
+        <Route path="appointments" element={<StaffAppointmentsPage />} />
 
         <Route path="create" element={<CreateStaffPage />} />
 
