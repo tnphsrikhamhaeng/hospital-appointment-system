@@ -164,6 +164,10 @@ function StaffAppointmentsPage() {
         <td>${escapeHtml(item.reason || "-")}</td>
         <td>${escapeHtml(statusLabels[item.status] ?? item.status)}</td>
         <td>${escapeHtml(item.cancelled_reason || "-")}</td>
+        <td>${escapeHtml(item.confirmed_at || "-")}</td>
+        <td>${escapeHtml(item.cancelled_at || "-")}</td>
+        <td>${escapeHtml(item.created_at)}</td>
+        <td>${escapeHtml(item.updated_at)}</td>
       </tr>`).join("");
     popup.document.write(`<!doctype html><html lang="th"><head><meta charset="utf-8">
       <title>รายงานนัดหมาย CareFlow</title>
@@ -176,7 +180,7 @@ function StaffAppointmentsPage() {
       </style></head><body>
       <h1>รายงานข้อมูลการนัดหมาย — CareFlow</h1>
       <p>ออกรายงานเมื่อ ${escapeHtml(new Date().toLocaleString("th-TH"))} | จำนวน ${filteredAppointments.length} รายการ</p>
-      <table><thead><tr><th>รหัสนัดหมาย</th><th>รหัสผู้ป่วย</th><th>รหัสแพทย์</th><th>รหัสแผนก</th><th>วันที่</th><th>เวลา</th><th>เหตุผลการนัด</th><th>สถานะ</th><th>เหตุผลยกเลิก</th></tr></thead>
+      <table><thead><tr><th>รหัสนัดหมาย</th><th>รหัสผู้ป่วย</th><th>รหัสแพทย์</th><th>รหัสแผนก</th><th>วันที่</th><th>เวลา</th><th>เหตุผลการนัด</th><th>สถานะ</th><th>เหตุผลยกเลิก</th><th>ยืนยันเมื่อ</th><th>ยกเลิกเมื่อ</th><th>สร้างเมื่อ</th><th>แก้ไขล่าสุด</th></tr></thead>
       <tbody>${rows}</tbody></table>
       <script>window.onload=()=>window.print();</script></body></html>`);
     popup.document.close();
