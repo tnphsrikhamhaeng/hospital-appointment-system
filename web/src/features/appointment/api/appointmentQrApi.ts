@@ -2,6 +2,7 @@ import api from "../../../api/axios";
 
 export interface StaffCheckInRequest {
   token: string;
+  room_number?: string;
 }
 
 export interface StaffCheckInResponse {
