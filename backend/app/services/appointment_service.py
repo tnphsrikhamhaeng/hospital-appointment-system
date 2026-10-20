@@ -54,6 +54,10 @@ NO_SHOW_WAIT_MINUTES = 15
 class AppointmentService:
 
     _ALLOWED_TRANSITIONS = {
+        AppointmentStatusEnum.PENDING: {
+            AppointmentStatusEnum.CONFIRMED,
+            AppointmentStatusEnum.CANCELLED,
+        },
         AppointmentStatusEnum.CONFIRMED: {
             AppointmentStatusEnum.CHECKED_IN,
             AppointmentStatusEnum.CANCELLED,
@@ -140,8 +144,8 @@ class AppointmentService:
             start_time=request.start_time,
             end_time=end_time,
             reason=request.reason,
-            status=AppointmentStatusEnum.CONFIRMED,
-            confirmed_at=datetime.now(timezone.utc),
+            status=AppointmentStatusEnum.PENDING,
+            confirmed_at=None,
         )
 
         appointment = self.appointment_repository.create(
@@ -155,20 +159,8 @@ class AppointmentService:
         self.db.commit()
         self.db.refresh(appointment)
 
-        # =====================================================
-        # SEND NOTIFICATION IN BACKGROUND
-        # =====================================================
-
-        background_tasks.add_task(
-            self._send_appointment_notification_background,
-            appointment.id,
-            NotificationTypeEnum.APPOINTMENT_CONFIRMED,
-            "ยืนยันการนัดหมาย",
-            (
-                "การนัดหมายของคุณได้รับการยืนยันแล้ว "
-                f"{self._format_appointment_datetime(appointment)}"
-            ),
-        )
+        # Appointment remains pending until hospital staff confirms it.
+        # Confirmation notifications are sent only after staff confirmation.
 
         return AppointmentResponse.model_validate(
             appointment
@@ -425,29 +417,38 @@ class AppointmentService:
 
         # =====================================================
         # HOSPITAL STAFF
-        # CONFIRMED -> CHECKED_IN only
+        # Confirm appointments, check in patients, and call patients.
         # =====================================================
 
         if current_user.role == UserRoleEnum.HOSPITAL_STAFF:
 
-            if (
-                request.status
-                != AppointmentStatusEnum.CHECKED_IN
-            ):
+            allowed_staff_statuses = {
+                AppointmentStatusEnum.CONFIRMED,
+                AppointmentStatusEnum.CHECKED_IN,
+                AppointmentStatusEnum.IN_PROGRESS,
+            }
+            if request.status not in allowed_staff_statuses:
                 raise ConflictException(
                     detail=(
-                        "Hospital staff can only change "
-                        "appointment status to CHECKED_IN."
+                        "Hospital staff can confirm appointments, "
+                        "check patients in, or call patients."
                     )
                 )
 
-            if request.room_number is not None:
+            if request.status in {
+                AppointmentStatusEnum.CHECKED_IN,
+                AppointmentStatusEnum.IN_PROGRESS,
+            } and not request.room_number:
                 raise ConflictException(
-                    detail=(
-                        "Room number is only required "
-                        "when doctor calls a patient."
-                    )
+                    detail="Room number is required for check-in and calling a patient."
                 )
+
+            if request.status == AppointmentStatusEnum.CONFIRMED:
+                if appointment.status != AppointmentStatusEnum.PENDING:
+                    raise ConflictException(
+                        detail="Only pending appointments can be confirmed."
+                    )
+                appointment.confirmed_at = datetime.now(timezone.utc)
 
         # =====================================================
         # DOCTOR
@@ -557,13 +558,26 @@ class AppointmentService:
         # NOTIFICATION IN BACKGROUND
         # =====================================================
 
-        if request.status == AppointmentStatusEnum.CHECKED_IN:
+        if request.status == AppointmentStatusEnum.CONFIRMED:
+
+            background_tasks.add_task(
+                self._send_appointment_notification_background,
+                appointment.id,
+                NotificationTypeEnum.APPOINTMENT_CONFIRMED,
+                "ยืนยันการนัดหมาย",
+                (
+                    "เจ้าหน้าที่ได้ยืนยันการนัดหมายของคุณแล้ว "
+                    f"{self._format_appointment_datetime(appointment)}"
+                ),
+            )
+
+        elif request.status == AppointmentStatusEnum.CHECKED_IN:
 
             background_tasks.add_task(
                 self._send_status_notification_background,
                 appointment.id,
                 request.status,
-                None,
+                request.room_number,
             )
 
         elif request.status == AppointmentStatusEnum.IN_PROGRESS:
