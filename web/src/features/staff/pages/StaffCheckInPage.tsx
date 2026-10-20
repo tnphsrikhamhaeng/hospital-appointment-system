@@ -106,6 +106,7 @@ const translateCheckInError = (message?: string): string => {
 };
 function StaffCheckInPage() {
   const [token, setToken] = useState("");
+  const [roomNumber, setRoomNumber] = useState("");
   const [isCheckingIn, setIsCheckingIn] = useState(false);
 
   const [isPreviewing, setIsPreviewing] = useState(false);
@@ -169,6 +170,10 @@ function StaffCheckInPage() {
     if (!previewData || !token.trim()) {
       return;
     }
+    if (!roomNumber.trim()) {
+      setErrorMessage("กรุณากรอกเลขห้องตรวจ");
+      return;
+    }
 
     setErrorMessage("");
     setSuccessMessage("");
@@ -177,10 +182,12 @@ function StaffCheckInPage() {
     try {
       await staffCheckIn({
         token: token.trim(),
+        room_number: roomNumber.trim(),
       });
 
-      setSuccessMessage("เช็คอินผู้ป่วยสำเร็จ");
+      setSuccessMessage("เช็คอินผู้ป่วยสำเร็จ และแจ้งเลขห้องให้ผู้ป่วยแล้ว");
       setToken("");
+      setRoomNumber("");
       setPreviewData(null);
     } catch (error: unknown) {
       if (typeof error === "object" && error !== null && "response" in error) {
@@ -456,6 +463,32 @@ function StaffCheckInPage() {
                   {previewData.department_name}
                 </span>
               </div>
+            </div>
+
+            <div className="check-in-modal-data-item full-width" style={{ marginTop: 16 }}>
+              <label className="check-in-modal-data-label" htmlFor="check-in-room-number">
+                เลขห้องตรวจ (เจ้าหน้าที่กรอก)
+              </label>
+              <input
+                id="check-in-room-number"
+                type="text"
+                value={roomNumber}
+                onChange={(event) => setRoomNumber(event.target.value)}
+                placeholder="เช่น 101"
+                disabled={isCheckingIn}
+                autoComplete="off"
+                style={{
+                  width: "100%",
+                  height: 42,
+                  boxSizing: "border-box",
+                  padding: "0 12px",
+                  border: "1px solid var(--border)",
+                  borderRadius: 7,
+                  background: "var(--surface)",
+                  color: "var(--text)",
+                  fontSize: 14,
+                }}
+              />
             </div>
 
             <div className="check-in-modal-actions">

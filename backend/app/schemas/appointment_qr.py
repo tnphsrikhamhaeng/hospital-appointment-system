@@ -13,6 +13,7 @@ class AppointmentQRCodeResponse(BaseModel):
 
 class AppointmentQRCodeCheckInRequest(BaseModel):
     token: str
+    room_number: str | None = None
 
 
 class AppointmentQRCodeCheckInResponse(BaseModel):

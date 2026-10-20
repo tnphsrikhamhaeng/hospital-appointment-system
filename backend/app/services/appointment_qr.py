@@ -24,8 +24,11 @@ from app.schemas.appointment_qr import (
 
 from app.core.enums import (
     AppointmentStatusEnum,
+    NotificationTypeEnum,
     UserRoleEnum,
 )
+
+from app.services.notification_service import NotificationService
 
 from app.core.exceptions import (
     AppointmentNotFoundException,
@@ -343,6 +346,11 @@ class AppointmentQRCodeService:
         if current_user.role != UserRoleEnum.HOSPITAL_STAFF:
             raise ForbiddenException()
 
+        if not request.room_number or not request.room_number.strip():
+            raise ConflictException(
+                detail="Room number is required for staff check-in."
+            )
+
         qr_code = self.qr_repository.get_by_token(
             request.token
         )
@@ -425,6 +433,19 @@ class AppointmentQRCodeService:
             appointment
         )
 
+        self.db.commit()
+
+        notification_service = NotificationService(self.db)
+        notification_service.create_notification(
+            appointment_id=appointment.id,
+            patient_id=appointment.patient_id,
+            notification_type=NotificationTypeEnum.APPOINTMENT_CHECKED_IN,
+            title="เช็คอินสำเร็จ",
+            body=(
+                "คุณเช็คอินสำหรับการนัดหมายเรียบร้อยแล้ว "
+                f"กรุณาไปที่ห้องตรวจ {request.room_number.strip()}"
+            ),
+        )
         self.db.commit()
 
         return AppointmentQRCodeCheckInResponse(

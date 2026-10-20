@@ -99,6 +99,21 @@ def search_appointments(
 
 
 @router.get(
+    "/staff/all",
+    response_model=list[AppointmentResponse],
+)
+def get_staff_appointments(
+    current_user: User = Depends(get_current_user),
+    service: AppointmentService = Depends(get_appointment_service),
+):
+    if current_user.role != UserRoleEnum.HOSPITAL_STAFF:
+        raise ForbiddenException(
+            detail="Only hospital staff can view all appointments."
+        )
+    return service.search_appointments()
+
+
+@router.get(
     "/my",
     response_model=list[AppointmentResponse],
 )
