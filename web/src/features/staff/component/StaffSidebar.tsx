@@ -111,6 +111,19 @@ function StaffSidebar() {
           <button
             type="button"
             className={`sidebar-nav-item ${
+              isActive("/staff/appointments")
+                ? "active"
+                : ""
+            }`}
+            onClick={() => navigate("/staff/appointments")}
+          >
+            <span className="nav-icon">▤</span>
+            <span>จัดการนัดหมาย</span>
+          </button>
+
+          <button
+            type="button"
+            className={`sidebar-nav-item ${
               isActive("/staff/doctors")
                 ? "active"
                 : ""
