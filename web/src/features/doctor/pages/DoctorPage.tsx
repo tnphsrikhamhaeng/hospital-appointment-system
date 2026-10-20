@@ -618,36 +618,9 @@ function DoctorPage() {
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  className="action-button primary call-patient-button"
-                  onClick={() => {
-                    if (!canCallPatient(nextPatientAppointment)) {
-                      setErrorMessage(
-                        "ยังไม่ถึงเวลานัดหมาย ไม่สามารถเรียกผู้ป่วยได้",
-                      );
-                      return;
-                    }
-
-                    setCallPatientAppointmentId(nextPatientAppointment.id);
-                    setRoomNumber("");
-                  }}
-                  disabled={
-                    !canCallPatient(nextPatientAppointment) ||
-                    isUpdating === nextPatientAppointment.id
-                  }
-                  title={
-                    canCallPatient(nextPatientAppointment)
-                      ? "เรียกผู้ป่วยเข้าห้องตรวจ"
-                      : "ยังไม่ถึงเวลานัดหมาย"
-                  }
-                >
-                  {isUpdating === nextPatientAppointment.id
-                    ? "กำลังเรียกผู้ป่วย..."
-                    : canCallPatient(nextPatientAppointment)
-                      ? "เรียกผู้ป่วย"
-                      : "รอถึงเวลานัด"}
-                </button>
+                <p className="muted-text" style={{ margin: 0 }}>
+                  เจ้าหน้าที่จะเป็นผู้เรียกผู้ป่วยและแจ้งห้องตรวจจากหน้าจัดการนัดหมาย
+                </p>
               </div>
             </div>
           ) : (
