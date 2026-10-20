@@ -476,27 +476,6 @@ class AppointmentService:
                 )
 
             # -------------------------------------------------
-            # Doctor calls patient
-            # -------------------------------------------------
-
-            if (
-                request.status
-                == AppointmentStatusEnum.IN_PROGRESS
-            ):
-
-                self._ensure_call_allowed(
-                    appointment
-                )
-
-                if request.room_number is None:
-                    raise ConflictException(
-                        detail=(
-                            "Room number is required "
-                            "when doctor calls a patient."
-                        )
-                    )
-
-            # -------------------------------------------------
             # Doctor marks patient as NO_SHOW
             # -------------------------------------------------
 
@@ -522,7 +501,7 @@ class AppointmentService:
                     detail=(
                         "Doctor can only change "
                         "appointment status to "
-                        "IN_PROGRESS or NO_SHOW."
+                        "NO_SHOW only."
                     )
                 )
 
