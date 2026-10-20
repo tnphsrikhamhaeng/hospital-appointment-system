@@ -481,7 +481,7 @@ class AppointmentService:
             # Doctor marks patient as NO_SHOW
             # -------------------------------------------------
 
-            elif (
+            if (
                 request.status
                 == AppointmentStatusEnum.NO_SHOW
             ):
