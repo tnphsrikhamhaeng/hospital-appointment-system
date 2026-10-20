@@ -1,11 +1,11 @@
 import uuid
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Body, Depends, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
-from app.core.enums import UserRoleEnum
+from app.core.enums import UserRoleEnum, NotificationTypeEnum
 from app.core.exceptions import ForbiddenException,Appointmentnotificationsaredisabled,Systemnotificationsaredisabled
 from app.models.user import User
 from app.schemas.notification import NotificationResponse
@@ -172,6 +172,42 @@ def create_consultation_delayed_notification(
     service.db.refresh(notification)
 
     return notification
+
+@router.post(
+    "/appointments/{appointment_id}/staff-notify",
+    response_model=NotificationResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_staff_appointment_notification(
+    appointment_id: uuid.UUID,
+    message: str = Body(..., embed=True, min_length=1, max_length=500),
+    current_user: User = Depends(get_current_user),
+    service: NotificationService = Depends(get_notification_service),
+    appointment_repository: AppointmentRepository = Depends(get_appointment_repository),
+):
+    if current_user.role != UserRoleEnum.HOSPITAL_STAFF:
+        raise ForbiddenException(
+            detail="Only hospital staff can notify patients about appointments."
+        )
+
+    appointment = appointment_repository.get_by_id(appointment_id)
+    if appointment is None:
+        raise ForbiddenException(detail="Appointment not found.")
+
+    notification = service.create_notification(
+        appointment_id=appointment.id,
+        patient_id=appointment.patient_id,
+        notification_type=NotificationTypeEnum.CONSULTATION_DELAYED,
+        title="แจ้งเตือนจากโรงพยาบาล",
+        body=message.strip(),
+    )
+    if notification is None:
+        raise Appointmentnotificationsaredisabled()
+
+    service.db.commit()
+    service.db.refresh(notification)
+    return notification
+
 
 @router.post(
     "/system",
