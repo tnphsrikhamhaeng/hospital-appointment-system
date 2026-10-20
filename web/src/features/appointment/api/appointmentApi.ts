@@ -99,3 +99,34 @@ export const createConsultationDelayedNotification = async (
 
   return response.data;
 };
+
+export interface CancelAppointmentRequest {
+  cancelled_reason: string;
+}
+
+export const getStaffAppointments = async (): Promise<Appointment[]> => {
+  const response = await api.get<Appointment[]>("/appointments/staff/all");
+  return response.data;
+};
+
+export const cancelAppointment = async (
+  appointmentId: string,
+  data: CancelAppointmentRequest,
+): Promise<Appointment> => {
+  const response = await api.patch<Appointment>(
+    `/appointments/${appointmentId}/cancel`,
+    data,
+  );
+  return response.data;
+};
+
+export const sendStaffAppointmentNotification = async (
+  appointmentId: string,
+  message: string,
+) => {
+  const response = await api.post(
+    `/notifications/appointments/${appointmentId}/staff-notify`,
+    { message },
+  );
+  return response.data;
+};
