@@ -66,9 +66,11 @@ class AppointmentService:
         AppointmentStatusEnum.CHECKED_IN: {
             AppointmentStatusEnum.IN_PROGRESS,
             AppointmentStatusEnum.COMPLETED,
+            AppointmentStatusEnum.CANCELLED,
             AppointmentStatusEnum.NO_SHOW,
         },
         AppointmentStatusEnum.IN_PROGRESS: {
+            AppointmentStatusEnum.CANCELLED,
             AppointmentStatusEnum.NO_SHOW,
         },
     }
