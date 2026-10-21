@@ -25,7 +25,7 @@ function StaffAppointmentsPage() {
   const [rooms, setRooms] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<Appointment | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
-  const [exportFields, setExportFields] = useState(["patient_name","doctor_name","department_name","appointment_date","start_time","status"]);
+  const [exportFields, setExportFields] = useState(["patient_name","department_name","doctor_name","appointment_date","start_time","status"]);
   const [exportStatuses, setExportStatuses] = useState<string[]>(Object.keys(statusLabels));
 
   const reload = async () => {
@@ -85,13 +85,15 @@ function StaffAppointmentsPage() {
   };
   const exportReport = () => {
     const reportAppointments = filtered.filter(a => exportStatuses.includes(a.status));
-    const rows = reportAppointments.map(a => "<tr>" + exportFields.map(k => {
+    const columnOrder = ["patient_name", "department_name", "doctor_name", "appointment_date", "start_time", "status", "confirmed_at", "cancelled_at"];
+    const orderedExportFields = columnOrder.filter(k => exportFields.includes(k));
+    const rows = reportAppointments.map(a => "<tr>" + orderedExportFields.map(k => {
       const val = k === "status" ? statusLabels[a.status] : k === "start_time" ? a.start_time.slice(0,5) + "–" + a.end_time.slice(0,5) : (a as unknown as Record<string,unknown>)[k];
       return "<td>" + escapeHtml(val) + "</td>";
     }).join("") + "</tr>").join("");
     const w = window.open("", "_blank", "width=1100,height=800");
     if (!w) { setError("กรุณาอนุญาต Pop-up เพื่อบันทึกรายงาน"); return; }
-    w.document.write(`<!doctype html><html lang="th"><meta charset="utf-8"><title>รายงานนัดหมาย</title><style>body{font-family:Arial,sans-serif;padding:24px}table{border-collapse:collapse;width:100%;font-size:11px}td,th{border:1px solid #bbb;padding:7px;text-align:left}th{background:#eef2f7}@page{size:landscape;margin:12mm}</style><h2>รายงานนัดหมาย CareFlow</h2><p>จำนวน ${reportAppointments.length} รายการ</p><table><thead><tr>${exportFields.map(k=>"<th>"+escapeHtml(fields[k] ?? k)+"</th>").join("")}</tr></thead><tbody>${rows}</tbody></table><script>window.onload=()=>window.print()</script></html>`);
+    w.document.write(`<!doctype html><html lang="th"><meta charset="utf-8"><title>รายงานนัดหมาย</title><style>body{font-family:Arial,sans-serif;padding:24px}table{border-collapse:collapse;width:100%;font-size:11px}td,th{border:1px solid #bbb;padding:7px;text-align:left}th{background:#eef2f7}@page{size:landscape;margin:12mm}</style><h2>รายงานนัดหมาย CareFlow</h2><p>จำนวน ${reportAppointments.length} รายการ</p><table><thead><tr>${orderedExportFields.map(k=>"<th>"+escapeHtml(fields[k] ?? k)+"</th>").join("")}</tr></thead><tbody>${rows}</tbody></table><script>window.onload=()=>window.print()</script></html>`);
     w.document.close(); setExportOpen(false);
   };
   const dateLabel = (d:string) => d ? new Intl.DateTimeFormat("th-TH",{day:"numeric",month:"short",year:"numeric"}).format(new Date(d+"T00:00:00")) : "-";
