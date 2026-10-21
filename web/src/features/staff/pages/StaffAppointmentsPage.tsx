@@ -80,7 +80,6 @@ function StaffAppointmentsPage() {
   const fields: Record<string,string> = {
     patient_name:"ชื่อผู้ป่วย", doctor_name:"แพทย์", department_name:"แผนก",
     appointment_date:"วันที่นัด", start_time:"เวลา", status:"สถานะ",
-    reason:"เหตุผลการนัด", cancelled_reason:"เหตุผลยกเลิก",
     confirmed_at:"ยืนยันเมื่อ", cancelled_at:"ยกเลิกเมื่อ",
   };
   const exportReport = () => {
@@ -128,7 +127,7 @@ function StaffAppointmentsPage() {
 
     {selected && <div className="modal-backdrop" onClick={()=>setSelected(null)}><section className="modal-panel" role="dialog" aria-modal="true" aria-labelledby="appointment-modal-title" onClick={e=>e.stopPropagation()}>
       <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"start"}}><div><span className="page-eyebrow">รายละเอียดนัดหมาย</span><h2 id="appointment-modal-title" style={{margin:"6px 0"}}>{selected.patient_name || "ไม่พบชื่อผู้ป่วย"}</h2><span className="status-pill">{statusLabels[selected.status]??selected.status}</span></div><button className="action-button secondary" onClick={()=>setSelected(null)}>ปิด</button></div>
-      <div className="detail-grid">{[["แพทย์",selected.doctor_name],["แผนก",selected.department_name],["วันที่",dateLabel(selected.appointment_date)],["เวลา",selected.start_time.slice(0,5)+"–"+selected.end_time.slice(0,5)],["เหตุผลการนัด",selected.reason],["เหตุผลยกเลิก",selected.cancelled_reason],["รหัสนัดหมาย",selected.id]].map(([k,v])=><div className="detail-item" key={k}><small>{k}</small><strong>{v || "-"}</strong></div>)}</div>
+      <div className="detail-grid">{[["แพทย์",selected.doctor_name],["แผนก",selected.department_name],["วันที่",dateLabel(selected.appointment_date)],["เวลา",selected.start_time.slice(0,5)+"–"+selected.end_time.slice(0,5)],["รหัสนัดหมาย",selected.id]].map(([k,v])=><div className="detail-item" key={k}><small>{k}</small><strong>{v || "-"}</strong></div>)}</div>
       {!terminal.includes(selected.status) && <label className="filter-label" style={{maxWidth:260}}>เลขห้องตรวจ (ใช้ตอนเช็คอิน/เรียกตรวจ)<input value={rooms[selected.id]??""} onChange={e=>setRooms(s=>({...s,[selected.id]:e.target.value}))} placeholder="เช่น 101"/></label>}
       <div className="staff-actions">
         {selected.status==="pending" && <button className="action-button primary" disabled={busyId===selected.id} onClick={()=>void runAction(selected,"confirm")}>ยืนยันนัดหมาย</button>}
