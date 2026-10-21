@@ -88,6 +88,9 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
 
   String _statusText() {
     switch (_appointment.status) {
+      case AppointmentStatus.pending:
+        return 'รอยืนยันจากเจ้าหน้าที่';
+
       case AppointmentStatus.confirmed:
         return 'ยืนยันแล้ว';
 
@@ -110,6 +113,9 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
 
   Color _statusColor() {
     switch (_appointment.status) {
+      case AppointmentStatus.pending:
+        return const Color(0xFFB7791F);
+
       case AppointmentStatus.cancelled:
       case AppointmentStatus.noShow:
         return AppTheme.errorColor;

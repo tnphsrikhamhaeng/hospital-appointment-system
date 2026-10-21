@@ -292,7 +292,7 @@ class _AppointmentBookingSuccessPageState
         const SizedBox(height: 14),
         const Center(
           child: Text(
-            'จองนัดสำเร็จ',
+            'จองนัดหมายสำเร็จ',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: 'Kanit',
@@ -304,11 +304,11 @@ class _AppointmentBookingSuccessPageState
           ),
         ),
         const SizedBox(height: 8),
-        _buildConfirmedBadge(),
+        _buildPendingBadge(),
         const SizedBox(height: 10),
         const Center(
           child: Text(
-            'ระบบได้บันทึกและยืนยันการนัดหมายของคุณเรียบร้อยแล้ว',
+            'กรุณารอการยืนยันจากเจ้าหน้าที่ เมื่อยืนยันแล้วระบบจะแจ้งให้คุณทราบ',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: 'Kanit',
@@ -331,30 +331,30 @@ class _AppointmentBookingSuccessPageState
     );
   }
 
-  Widget _buildConfirmedBadge() {
+  Widget _buildPendingBadge() {
     return Center(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
         decoration: BoxDecoration(
-          color: const Color(0xFFD9FBE2),
+          color: const Color(0xFFFFF1D6),
           borderRadius: BorderRadius.circular(20),
         ),
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.check_circle_rounded,
+              Icons.hourglass_top_rounded,
               size: 14,
-              color: Color(0xFF16A34A),
+              color: Color(0xFFB7791F),
             ),
             SizedBox(width: 5),
             Text(
-              'ยืนยันแล้ว',
+              'รอยืนยันจากเจ้าหน้าที่',
               style: TextStyle(
                 fontFamily: 'Kanit',
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF15803D),
+                color: Color(0xFF975A16),
               ),
             ),
           ],

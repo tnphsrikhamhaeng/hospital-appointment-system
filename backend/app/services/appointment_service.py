@@ -577,10 +577,11 @@ class AppointmentService:
                 self._send_appointment_notification_background,
                 appointment.id,
                 NotificationTypeEnum.APPOINTMENT_CONFIRMED,
-                "ยืนยันการนัดหมาย",
+                "เจ้าหน้าที่ยืนยันนัดหมายแล้ว",
                 (
-                    "เจ้าหน้าที่ได้ยืนยันการนัดหมายของคุณแล้ว "
-                    f"{self._format_appointment_datetime(appointment)}"
+                    "เจ้าหน้าที่ได้ยืนยันนัดหมายของคุณแล้ว "
+                    f"วันที่ {appointment.appointment_date.strftime('%d/%m/%Y')} "
+                    f"เวลา {appointment.start_time.strftime('%H:%M')} น."
                 ),
             )
 
