@@ -265,7 +265,39 @@ class AppointmentService:
 
         return [
             AppointmentResponse.model_validate(
-                appointment
+                {
+                    **{
+                        column: getattr(appointment, column)
+                        for column in (
+                            "id",
+                            "patient_id",
+                            "doctor_id",
+                            "department_id",
+                            "appointment_date",
+                            "start_time",
+                            "end_time",
+                            "reason",
+                            "status",
+                            "cancelled_reason",
+                            "cancelled_at",
+                            "confirmed_at",
+                            "created_at",
+                            "updated_at",
+                        )
+                    },
+                    "patient_name": (
+                        f"{appointment.patient.first_name} {appointment.patient.last_name}"
+                        if appointment.patient else None
+                    ),
+                    "doctor_name": (
+                        f"{appointment.doctor.preface.value} {appointment.doctor.first_name} {appointment.doctor.last_name}"
+                        if appointment.doctor else None
+                    ),
+                    "department_name": (
+                        appointment.department.name
+                        if appointment.department else None
+                    ),
+                }
             )
             for appointment in appointments
         ]

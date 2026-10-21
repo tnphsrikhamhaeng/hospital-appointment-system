@@ -5,6 +5,9 @@ export interface Appointment {
   patient_id: string;
   doctor_id: string;
   department_id: string;
+  patient_name?: string | null;
+  doctor_name?: string | null;
+  department_name?: string | null;
   appointment_date: string;
   start_time: string;
   end_time: string;

@@ -56,6 +56,10 @@ class AppointmentResponse(BaseModel):
     doctor_id: uuid.UUID
     department_id: uuid.UUID
 
+    patient_name: str | None = None
+    doctor_name: str | None = None
+    department_name: str | None = None
+
     appointment_date: date
     start_time: time
     end_time: time
