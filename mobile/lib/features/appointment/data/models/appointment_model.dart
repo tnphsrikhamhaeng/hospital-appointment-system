@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 enum AppointmentStatus {
+  pending,
   confirmed,
   checkedIn,
   cancelled,
@@ -93,6 +94,9 @@ class AppointmentModel {
     String value,
   ) {
     switch (value.toLowerCase()) {
+      case 'pending':
+        return AppointmentStatus.pending;
+
       case 'confirmed':
         return AppointmentStatus.confirmed;
 
@@ -142,6 +146,9 @@ class AppointmentModel {
 
   String get statusValue {
     switch (status) {
+      case AppointmentStatus.pending:
+        return 'pending';
+
       case AppointmentStatus.confirmed:
         return 'confirmed';
 
