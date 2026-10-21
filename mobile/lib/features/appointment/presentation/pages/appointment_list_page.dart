@@ -582,6 +582,9 @@ class _AppointmentCard extends StatelessWidget {
 
   String _statusText() {
     switch (appointment.status) {
+      case AppointmentStatus.pending:
+        return 'รอยืนยันจากเจ้าหน้าที่';
+
       case AppointmentStatus.confirmed:
         return 'ยืนยันแล้ว';
 
@@ -607,6 +610,9 @@ class _AppointmentCard extends StatelessWidget {
       case AppointmentStatus.cancelled:
       case AppointmentStatus.noShow:
         return AppTheme.errorColor;
+
+      case AppointmentStatus.pending:
+        return const Color(0xFFB7791F);
 
       case AppointmentStatus.confirmed:
         return AppTheme.successColor;
