@@ -738,12 +738,43 @@ class AppointmentService:
             status=status,
         )
 
-        return [
-            AppointmentResponse.model_validate(
-                appointment
+        results = []
+        for appointment in appointments:
+            patient = appointment.patient
+            doctor = appointment.doctor
+            department = appointment.department
+            results.append(
+                AppointmentResponse.model_validate(
+                    {
+                        "id": appointment.id,
+                        "patient_id": appointment.patient_id,
+                        "doctor_id": appointment.doctor_id,
+                        "department_id": appointment.department_id,
+                        "patient_name": (
+                            f"{patient.first_name} {patient.last_name}"
+                            if patient else None
+                        ),
+                        "doctor_name": (
+                            f"{doctor.preface.value} {doctor.first_name} {doctor.last_name}"
+                            if doctor else None
+                        ),
+                        "department_name": (
+                            department.name if department else None
+                        ),
+                        "appointment_date": appointment.appointment_date,
+                        "start_time": appointment.start_time,
+                        "end_time": appointment.end_time,
+                        "reason": appointment.reason,
+                        "status": appointment.status,
+                        "cancelled_reason": appointment.cancelled_reason,
+                        "cancelled_at": appointment.cancelled_at,
+                        "confirmed_at": appointment.confirmed_at,
+                        "created_at": appointment.created_at,
+                        "updated_at": appointment.updated_at,
+                    }
+                )
             )
-            for appointment in appointments
-        ]
+        return results
 
     # =========================================================
     # HELPERS
