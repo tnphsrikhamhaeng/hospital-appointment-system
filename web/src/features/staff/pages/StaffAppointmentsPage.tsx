@@ -25,7 +25,8 @@ function StaffAppointmentsPage() {
   const [rooms, setRooms] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<Appointment | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
-  const [exportFields, setExportFields] = useState(["patient_name","doctor_name","department_name","appointment_date","start_time","status","reason","cancelled_reason"]);
+  const [exportFields, setExportFields] = useState(["patient_name","doctor_name","department_name","appointment_date","start_time","status"]);
+  const [exportStatuses, setExportStatuses] = useState<string[]>(Object.keys(statusLabels));
 
   const reload = async () => {
     setLoading(true); setError("");
@@ -83,13 +84,14 @@ function StaffAppointmentsPage() {
     confirmed_at:"ยืนยันเมื่อ", cancelled_at:"ยกเลิกเมื่อ",
   };
   const exportReport = () => {
-    const rows = filtered.map(a => "<tr>" + exportFields.map(k => {
+    const reportAppointments = filtered.filter(a => exportStatuses.includes(a.status));
+    const rows = reportAppointments.map(a => "<tr>" + exportFields.map(k => {
       const val = k === "status" ? statusLabels[a.status] : k === "start_time" ? a.start_time.slice(0,5) + "–" + a.end_time.slice(0,5) : (a as unknown as Record<string,unknown>)[k];
       return "<td>" + escapeHtml(val) + "</td>";
     }).join("") + "</tr>").join("");
     const w = window.open("", "_blank", "width=1100,height=800");
     if (!w) { setError("กรุณาอนุญาต Pop-up เพื่อบันทึกรายงาน"); return; }
-    w.document.write(`<!doctype html><html lang="th"><meta charset="utf-8"><title>รายงานนัดหมาย</title><style>body{font-family:Arial,sans-serif;padding:24px}table{border-collapse:collapse;width:100%;font-size:11px}td,th{border:1px solid #bbb;padding:7px;text-align:left}th{background:#eef2f7}@page{size:landscape;margin:12mm}</style><h2>รายงานนัดหมาย CareFlow</h2><p>จำนวน ${filtered.length} รายการ</p><table><thead><tr>${exportFields.map(k=>"<th>"+escapeHtml(fields[k] ?? k)+"</th>").join("")}</tr></thead><tbody>${rows}</tbody></table><script>window.onload=()=>window.print()</script></html>`);
+    w.document.write(`<!doctype html><html lang="th"><meta charset="utf-8"><title>รายงานนัดหมาย</title><style>body{font-family:Arial,sans-serif;padding:24px}table{border-collapse:collapse;width:100%;font-size:11px}td,th{border:1px solid #bbb;padding:7px;text-align:left}th{background:#eef2f7}@page{size:landscape;margin:12mm}</style><h2>รายงานนัดหมาย CareFlow</h2><p>จำนวน ${reportAppointments.length} รายการ</p><table><thead><tr>${exportFields.map(k=>"<th>"+escapeHtml(fields[k] ?? k)+"</th>").join("")}</tr></thead><tbody>${rows}</tbody></table><script>window.onload=()=>window.print()</script></html>`);
     w.document.close(); setExportOpen(false);
   };
   const dateLabel = (d:string) => d ? new Intl.DateTimeFormat("th-TH",{day:"numeric",month:"short",year:"numeric"}).format(new Date(d+"T00:00:00")) : "-";
@@ -98,7 +100,13 @@ function StaffAppointmentsPage() {
     <style>{`
       .staff-appointments input,.staff-appointments select{box-sizing:border-box;min-height:40px;padding:9px 12px;border:1px solid var(--border,#d7dfeb);border-radius:8px;background:var(--surface,#fff);color:var(--text,#172033);font:inherit;outline:none}
       .staff-appointments input:focus,.staff-appointments select:focus{border-color:#2672c9;box-shadow:0 0 0 3px #2672c91c}
-      .staff-appointments .filter-label{display:grid;gap:6px;min-width:180px;font-size:13px;font-weight:600}
+      .staff-appointments .filter-label{display:grid;gap:6px;min-width:180px;font-size:13px;font-weight:400}
+      .staff-appointments h1,.staff-appointments h2,.staff-appointments h3{font-weight:500}
+      .staff-appointments .appointment-row strong,.staff-appointments .detail-item strong{font-weight:500}
+      .staff-appointments .detail-item small{font-weight:400}
+      .staff-appointments .modal-panel{font-weight:400}
+      .staff-appointments .modal-panel label{font-weight:400}
+      .staff-appointments .modal-panel input[type="checkbox"]{min-height:auto;padding:0;accent-color:#1765b3}
       .staff-appointments .appointment-row{cursor:pointer}.staff-appointments .appointment-row:hover{background:#f4f8fd}
       .staff-appointments .status-pill{display:inline-block;border-radius:20px;padding:5px 10px;background:#eef3f9;font-size:12px;white-space:nowrap}
       .staff-appointments .modal-backdrop{position:fixed;inset:0;background:#0b183b88;display:flex;align-items:center;justify-content:center;padding:18px;z-index:9999}
@@ -140,8 +148,12 @@ function StaffAppointmentsPage() {
 
     {exportOpen && <div className="modal-backdrop" onClick={()=>setExportOpen(false)}><section className="modal-panel" role="dialog" aria-modal="true" onClick={e=>e.stopPropagation()}>
       <h2>เลือกข้อมูลสำหรับรายงาน PDF</h2><p>จะส่งออกเฉพาะรายการที่ผ่านตัวกรองปัจจุบัน ({filtered.length} รายการ) และแสดงข้อมูลเป็นชื่อ ไม่ใช่ ID</p>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:12,margin:"18px 0"}}>{Object.entries(fields).map(([k,label])=><label key={k} style={{display:"flex",gap:8,alignItems:"center"}}><input type="checkbox" checked={exportFields.includes(k)} onChange={e=>setExportFields(old=>e.target.checked?[...old,k]:old.filter(x=>x!==k))}/>{label}</label>)}</div>
-      <div className="staff-actions"><button className="action-button primary" disabled={!exportFields.length || !filtered.length} onClick={exportReport}>เปิดหน้าบันทึก PDF</button><button className="action-button secondary" onClick={()=>setExportOpen(false)}>ยกเลิก</button></div>
+      <h3 style={{fontSize:14,fontWeight:500,margin:"18px 0 8px"}}>ข้อมูลที่ต้องการแสดง</h3>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:12,margin:"10px 0 20px"}}>{Object.entries(fields).map(([k,label])=><label key={k} style={{display:"flex",gap:8,alignItems:"center",fontWeight:400,fontSize:14}}><input type="checkbox" checked={exportFields.includes(k)} onChange={e=>setExportFields(old=>e.target.checked?[...old,k]:old.filter(x=>x!==k))}/>{label}</label>)}</div>
+      <h3 style={{fontSize:14,fontWeight:500,margin:"18px 0 8px"}}>สถานะที่ต้องการส่งออก</h3>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:12,margin:"10px 0 20px"}}>{Object.entries(statusLabels).map(([value,label])=><label key={value} style={{display:"flex",gap:8,alignItems:"center",fontWeight:400,fontSize:14}}><input type="checkbox" checked={exportStatuses.includes(value)} onChange={e=>setExportStatuses(old=>e.target.checked?[...old,value]:old.filter(x=>x!==value))}/>{label}</label>)}</div>
+      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}><button className="action-button secondary" onClick={()=>setExportStatuses(Object.keys(statusLabels))}>เลือกทุกสถานะ</button><button className="action-button secondary" onClick={()=>setExportStatuses([])}>ล้างสถานะ</button></div>
+      <div className="staff-actions"><button className="action-button primary" disabled={!exportFields.length || !exportStatuses.length || !filtered.some(a=>exportStatuses.includes(a.status))} onClick={exportReport}>เปิดหน้าบันทึก PDF</button><button className="action-button secondary" onClick={()=>setExportOpen(false)}>ยกเลิก</button></div>
       <p style={{fontSize:12,color:"var(--muted)"}}>ในหน้าพิมพ์ เลือก “Save as PDF / บันทึกเป็น PDF” เพื่อเซฟลงเครื่อง</p>
     </section></div>}
   </section>;
