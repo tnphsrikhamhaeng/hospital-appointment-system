@@ -903,6 +903,8 @@ class _HomePageState extends State<HomePage> {
 
   String _statusText(AppointmentStatus status) {
     switch (status) {
+      case AppointmentStatus.pending:
+        return 'รอยืนยันจากเจ้าหน้าที่';
       case AppointmentStatus.confirmed:
         return 'ยืนยันแล้ว';
       case AppointmentStatus.checkedIn:
@@ -920,6 +922,8 @@ class _HomePageState extends State<HomePage> {
 
   Color _statusColor(AppointmentStatus status) {
     switch (status) {
+      case AppointmentStatus.pending:
+        return AppTheme.primaryColor;
       case AppointmentStatus.cancelled:
       case AppointmentStatus.noShow:
         return AppTheme.errorColor;
