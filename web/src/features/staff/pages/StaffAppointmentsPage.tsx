@@ -81,11 +81,10 @@ function StaffAppointmentsPage() {
   const fields: Record<string,string> = {
     patient_name:"ชื่อผู้ป่วย", doctor_name:"แพทย์", department_name:"แผนก",
     appointment_date:"วันที่นัด", start_time:"เวลา", status:"สถานะ",
-    confirmed_at:"ยืนยันเมื่อ", cancelled_at:"ยกเลิกเมื่อ",
   };
   const exportReport = () => {
     const reportAppointments = filtered.filter(a => exportStatuses.includes(a.status));
-    const columnOrder = ["patient_name", "department_name", "doctor_name", "appointment_date", "start_time", "status", "confirmed_at", "cancelled_at"];
+    const columnOrder = ["patient_name", "department_name", "doctor_name", "appointment_date", "start_time", "status"];
     const orderedExportFields = columnOrder.filter(k => exportFields.includes(k));
     const rows = reportAppointments.map(a => "<tr>" + orderedExportFields.map(k => {
       const val = k === "status" ? statusLabels[a.status] : k === "start_time" ? a.start_time.slice(0,5) + "–" + a.end_time.slice(0,5) : (a as unknown as Record<string,unknown>)[k];
