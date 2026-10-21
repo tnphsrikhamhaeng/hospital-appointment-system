@@ -755,7 +755,7 @@ class AppointmentService:
                             if patient else None
                         ),
                         "doctor_name": (
-                            f"{doctor.preface.value} {doctor.first_name} {doctor.last_name}"
+                            f"{'นพ.' if doctor.preface.value == 'mr_doctor' else 'พญ.' if doctor.preface.value == 'female_doctor' else ''} {doctor.first_name} {doctor.last_name}".strip()
                             if doctor else None
                         ),
                         "department_name": (
