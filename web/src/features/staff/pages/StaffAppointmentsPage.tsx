@@ -149,7 +149,7 @@ function StaffAppointmentsPage() {
     </section></div>}
 
     {exportOpen && <div className="modal-backdrop" onClick={()=>setExportOpen(false)}><section className="modal-panel" role="dialog" aria-modal="true" onClick={e=>e.stopPropagation()}>
-      <h2>เลือกข้อมูลสำหรับรายงาน PDF</h2><p>จะส่งออกเฉพาะรายการที่ผ่านตัวกรองปัจจุบัน ({filtered.length} รายการ) และแสดงข้อมูลเป็นชื่อ ไม่ใช่ ID</p>
+      <h2>เลือกข้อมูลสำหรับรายงาน PDF</h2>
       <h3 style={{fontSize:14,fontWeight:500,margin:"18px 0 8px"}}>ข้อมูลที่ต้องการแสดง</h3>
       <div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:12,margin:"10px 0 20px"}}>{Object.entries(fields).map(([k,label])=><label key={k} style={{display:"flex",gap:8,alignItems:"center",fontWeight:400,fontSize:14}}><input type="checkbox" checked={exportFields.includes(k)} onChange={e=>setExportFields(old=>e.target.checked?[...old,k]:old.filter(x=>x!==k))}/>{label}</label>)}</div>
       <h3 style={{fontSize:14,fontWeight:500,margin:"18px 0 8px"}}>สถานะที่ต้องการส่งออก</h3>
