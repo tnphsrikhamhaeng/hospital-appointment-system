@@ -16,9 +16,22 @@ class OneSignalService {
 
       OneSignal.initialize(_appId);
 
-      await OneSignal.Notifications.requestPermission(true);
+      final permissionGranted =
+          await OneSignal.Notifications.requestPermission(true);
 
-      print('OneSignal initialized successfully');
+      // Explicitly opt this device into push after the permission request.
+      // This also retries subscription registration when the user has
+      // already granted permission but the subscription was not opted in.
+      await OneSignal.User.pushSubscription.optIn();
+
+      final pushSubscription = OneSignal.User.pushSubscription;
+      print(
+        'OneSignal initialized. '
+        'permission=$permissionGranted '
+        'optedIn=${pushSubscription.optedIn} '
+        'hasSubscriptionId=${pushSubscription.id != null} '
+        'hasPushToken=${pushSubscription.token != null}',
+      );
     } catch (error) {
       print(
         'OneSignal initialization failed: $error',
