@@ -108,10 +108,10 @@ class NotificationService:
             appointment_id=appointment_id,
             patient_id=patient_id,
             notification_type=notification_type,
-            notification_status=NotificationStatusEnum.SENT,
+            notification_status=NotificationStatusEnum.FAILED,
             title=title,
             body=body,
-            sent_at=datetime.now(timezone.utc),
+            sent_at=None,
         )
 
         notification = self.notification_repository.create(
@@ -125,14 +125,22 @@ class NotificationService:
                 body=body,
             )
 
+            notification.notification_status = NotificationStatusEnum.SENT
+            notification.sent_at = datetime.now(timezone.utc)
+            notification.error_message = None
+
             logger.info(
-                "OneSignal notification sent successfully. "
+                "OneSignal notification accepted. "
                 "user_id=%s response=%s",
                 patient_id,
                 response,
             )
 
         except Exception as exc:
+            notification.notification_status = NotificationStatusEnum.FAILED
+            notification.sent_at = None
+            notification.error_message = str(exc)[:500]
+
             logger.exception(
                 "OneSignal notification failed. "
                 "user_id=%s error=%s",
