@@ -141,3 +141,22 @@ select {
     animation: none;
   }
 }
+
+/* Global feedback colors: success/status messages are green; errors are red. */
+[role="status"],
+[aria-live="polite"].alert-success,
+.alert-success,
+.success-message {
+  border-color: #b7e4cb !important;
+  background-color: #eaf8f1 !important;
+  color: #16865b !important;
+}
+
+[role="alert"],
+.alert-error,
+.alert-danger,
+.error-message {
+  border-color: #f0caca !important;
+  background-color: #fff0f0 !important;
+  color: #d64545 !important;
+}
