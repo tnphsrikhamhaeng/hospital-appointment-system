@@ -90,10 +90,12 @@ function StaffAppointmentsPage() {
       const val = k === "status" ? statusLabels[a.status] : k === "start_time" ? a.start_time.slice(0,5) + "–" + a.end_time.slice(0,5) : (a as unknown as Record<string,unknown>)[k];
       return "<td>" + escapeHtml(val) + "</td>";
     }).join("") + "</tr>").join("");
-    const statusCounts = Object.entries(statusLabels).map(([status, label]) => ({
-      label,
-      count: reportAppointments.filter(a => a.status === status).length,
-    }));
+    const statusCounts = Object.entries(statusLabels)
+      .filter(([status]) => exportStatuses.includes(status))
+      .map(([status, label]) => ({
+        label,
+        count: reportAppointments.filter(a => a.status === status).length,
+      }));
     const statusSummary = statusCounts.map(({ label, count }) => `<tr><td>${escapeHtml(label)}</td><td>${count}</td></tr>`).join("");
     const w = window.open("", "_blank", "width=1100,height=800");
     if (!w) { setError("กรุณาอนุญาต Pop-up เพื่อบันทึกรายงาน"); return; }
