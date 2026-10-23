@@ -1269,14 +1269,10 @@ class AppointmentService:
                         NotificationTypeEnum
                         .APPOINTMENT_CHECKED_IN
                     ),
-                    title="เช็คอินสำเร็จ",
+                    title="เจ้าหน้าที่เช็กอินสำเร็จ",
                     body=(
-                        "คุณเช็คอินสำหรับการนัดหมายเรียบร้อยแล้ว "
-                        + (
-                            f"กรุณาไปที่ห้องตรวจ {room_number} "
-                            if room_number
-                            else "กรุณารอเรียกเข้าพบแพทย์"
-                        )
+                        "เจ้าหน้าที่เช็กอินสำเร็จ "
+                        + (f"กรุณารอเรียกตรวจที่ห้อง {room_number}" if room_number else "กรุณารอเรียกตรวจ")
                     ),
                 )
 
