@@ -24,6 +24,9 @@ function StaffAppointmentsPage() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [rooms, setRooms] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<Appointment | null>(null);
+  const [notifyOpen, setNotifyOpen] = useState(false);
+  const [notifyAction, setNotifyAction] = useState<"cancel" | "delay">("delay");
+  const [notifyReason, setNotifyReason] = useState("");
   const [exportOpen, setExportOpen] = useState(false);
   const [exportFields, setExportFields] = useState(["patient_name","department_name","doctor_name","appointment_date","start_time","status"]);
   const [exportStatuses, setExportStatuses] = useState<string[]>(Object.keys(statusLabels));
@@ -37,7 +40,7 @@ function StaffAppointmentsPage() {
   useEffect(() => { void reload(); }, []);
 
   const filtered = useMemo(() => appointments
-    .filter(a => !searchId.trim() || a.id.toLowerCase().includes(searchId.trim().toLowerCase()) || (a.patient_name ?? "").toLowerCase().includes(searchId.trim().toLowerCase()))
+    .filter(a => !searchId.trim() || (a.check_in_code ?? "").toLowerCase().includes(searchId.trim().toLowerCase()) || (a.patient_name ?? "").toLowerCase().includes(searchId.trim().toLowerCase()))
     .filter(a => !filterDate || a.appointment_date === filterDate)
     .filter(a => filterStatus === "all" || a.status === filterStatus)
     .sort((a,b) => a.appointment_date.localeCompare(b.appointment_date) || a.start_time.localeCompare(b.start_time)),
@@ -45,26 +48,14 @@ function StaffAppointmentsPage() {
 
   const updateLocal = (a: Appointment) => {
     setAppointments(xs => xs.map(x => x.id === a.id ? a : x));
-    setSelected(a);
+    setSelected(null);
   };
-  const runAction = async (a: Appointment, action: "confirm" | "checkin" | "call" | "cancel" | "notify") => {
+  const runAction = async (a: Appointment, action: "confirm" | "checkin" | "call" | "notify") => {
     setError(""); setNotice("");
-    if (action === "cancel") {
-      const reason = window.prompt("กรอกเหตุผลการยกเลิกนัด");
-      if (reason === null) return;
-      if (!reason.trim()) { setError("กรุณากรอกเหตุผลการยกเลิก"); return; }
-      setBusyId(a.id);
-      try { updateLocal(await cancelAppointment(a.id,{cancelled_reason:reason.trim()})); setNotice("ยกเลิกนัดและส่งแจ้งเตือนแล้ว"); }
-      catch { setError("ยกเลิกนัดไม่สำเร็จ"); } finally { setBusyId(null); }
-      return;
-    }
     if (action === "notify") {
-      const message = window.prompt("ข้อความแจ้งเตือนผู้ป่วย");
-      if (message === null) return;
-      if (!message.trim()) { setError("กรุณากรอกข้อความ"); return; }
-      setBusyId(a.id);
-      try { await sendStaffAppointmentNotification(a.id,message.trim()); setNotice("ส่งแจ้งเตือนแล้ว"); }
-      catch { setError("ส่งแจ้งเตือนไม่สำเร็จ"); } finally { setBusyId(null); }
+      setNotifyAction("delay");
+      setNotifyReason("");
+      setNotifyOpen(true);
       return;
     }
     const status = action === "confirm" ? "confirmed" : action === "checkin" ? "checked_in" : "in_progress";
@@ -76,6 +67,26 @@ function StaffAppointmentsPage() {
       setNotice(action === "confirm" ? "ยืนยันนัดหมายและส่งแจ้งเตือนแล้ว" : action === "checkin" ? "เช็คอินและแจ้งเลขห้องแล้ว" : "เรียกผู้ป่วยและแจ้งเตือนแล้ว");
     } catch { setError("ดำเนินการไม่สำเร็จ กรุณาลองใหม่"); }
     finally { setBusyId(null); }
+  };
+
+  const submitNotificationAction = async () => {
+    if (!selected) return;
+    const reason = notifyReason.trim();
+    if (!reason) { setError("กรุณากรอกเหตุผล"); return; }
+    setBusyId(selected.id); setError(""); setNotice("");
+    try {
+      if (notifyAction === "cancel") {
+        const updated = await cancelAppointment(selected.id, { cancelled_reason: reason });
+        setAppointments(xs => xs.map(x => x.id === updated.id ? updated : x));
+        setNotice("ยกเลิกนัดหมายและส่งแจ้งเตือนผู้ป่วยแล้ว");
+      } else {
+        await sendStaffAppointmentNotification(selected.id, `แจ้งล่าช้า: ${reason}`);
+        setNotice("ส่งแจ้งเตือนการล่าช้าให้ผู้ป่วยแล้ว");
+      }
+      setNotifyOpen(false); setSelected(null); setNotifyReason("");
+    } catch {
+      setError(notifyAction === "cancel" ? "ยกเลิกนัดหมายหรือส่งแจ้งเตือนไม่สำเร็จ" : "ส่งแจ้งเตือนการล่าช้าไม่สำเร็จ");
+    } finally { setBusyId(null); }
   };
 
   const fields: Record<string,string> = {
@@ -129,7 +140,7 @@ function StaffAppointmentsPage() {
       <button className="action-button primary" onClick={()=>setExportOpen(true)}>ส่งออกรายงาน PDF</button></header>
     {error && <div className="doctor-alert" role="alert">{error}</div>}{notice && <div className="doctor-alert" role="status">{notice}</div>}
     <section className="current-patient-card" style={{marginBottom:18}}><div style={{display:"flex",gap:14,flexWrap:"wrap",padding:20,alignItems:"end"}}>
-      <label className="filter-label">ค้นหารหัสนัดหรือชื่อผู้ป่วย<input value={searchId} onChange={e=>setSearchId(e.target.value)} placeholder="พิมพ์ชื่อหรือรหัสนัด"/></label>
+      <label className="filter-label">ค้นหารหัสเช็กอินหรือชื่อผู้ป่วย<input value={searchId} onChange={e=>setSearchId(e.target.value)} placeholder="พิมพ์ชื่อหรือรหัสเช็กอิน"/></label>
       <label className="filter-label">วันที่นัด<input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)}/></label>
       <label className="filter-label">กรองตามสถานะ<select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}><option value="all">ทุกสถานะ</option>{Object.entries(statusLabels).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label>
       <button className="action-button secondary" onClick={()=>{setSearchId("");setFilterDate("");setFilterStatus("all");}}>ล้างตัวกรอง</button>
@@ -143,15 +154,29 @@ function StaffAppointmentsPage() {
 
     {selected && <div className="modal-backdrop" onClick={()=>setSelected(null)}><section className="modal-panel" role="dialog" aria-modal="true" aria-labelledby="appointment-modal-title" onClick={e=>e.stopPropagation()}>
       <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"start"}}><div><span className="page-eyebrow">รายละเอียดนัดหมาย</span><h2 id="appointment-modal-title" style={{margin:"6px 0"}}>{selected.patient_name || "ไม่พบชื่อผู้ป่วย"}</h2><span className="status-pill">{statusLabels[selected.status]??selected.status}</span></div><button className="action-button secondary" onClick={()=>setSelected(null)}>ปิด</button></div>
-      <div className="detail-grid">{[["แพทย์",selected.doctor_name],["แผนก",selected.department_name],["วันที่",dateLabel(selected.appointment_date)],["เวลา",selected.start_time.slice(0,5)+"–"+selected.end_time.slice(0,5)],["รหัสนัดหมาย",selected.id]].map(([k,v])=><div className="detail-item" key={k}><small>{k}</small><strong>{v || "-"}</strong></div>)}</div>
+      <div className="detail-grid">{[["แพทย์",selected.doctor_name],["แผนก",selected.department_name],["วันที่",dateLabel(selected.appointment_date)],["เวลา",selected.start_time.slice(0,5)+"–"+selected.end_time.slice(0,5)],["รหัสเช็กอิน",selected.check_in_code || "-"]].map(([k,v])=><div className="detail-item" key={k}><small>{k}</small><strong>{v || "-"}</strong></div>)}</div>
       {["confirmed","checked_in"].includes(selected.status) && <label className="filter-label" style={{maxWidth:260}}>เลขห้องตรวจ<input value={rooms[selected.id]??""} onChange={e=>setRooms(s=>({...s,[selected.id]:e.target.value}))} placeholder="เช่น 101" required/></label>}
       <div className="staff-actions">
         {selected.status==="pending" && <button className="action-button primary" disabled={busyId===selected.id} onClick={()=>void runAction(selected,"confirm")}>ยืนยันนัดหมาย</button>}
         {selected.status==="confirmed" && <button className="action-button primary" disabled={busyId===selected.id} onClick={()=>void runAction(selected,"checkin")}>เช็คอิน</button>}
         {selected.status==="checked_in" && <button className="action-button primary" disabled={busyId===selected.id} onClick={()=>void runAction(selected,"call")}>เรียกตรวจ</button>}
-        {!terminal.includes(selected.status) && <button className="action-button secondary" disabled={busyId===selected.id} onClick={()=>void runAction(selected,"notify")}>ส่งแจ้งเตือน</button>}
-        {["pending","confirmed","checked_in"].includes(selected.status) && <button className="action-button danger" disabled={busyId===selected.id} onClick={()=>void runAction(selected,"cancel")}>ยกเลิกนัด</button>}
+        {!terminal.includes(selected.status) && <button className="action-button secondary" disabled={busyId===selected.id} onClick={()=>void runAction(selected,"notify")}>แจ้งเตือน</button>}
       </div>
+    </section></div>}
+
+    {notifyOpen && selected && <div className="modal-backdrop" onClick={()=>{if(!busyId)setNotifyOpen(false)}}><section className="modal-panel" role="dialog" aria-modal="true" aria-labelledby="staff-notify-title" onClick={e=>e.stopPropagation()}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}><h2 id="staff-notify-title">แจ้งเตือนผู้ป่วย</h2><button className="action-button secondary" disabled={!!busyId} onClick={()=>setNotifyOpen(false)}>ปิด</button></div>
+      <p>ผู้ป่วย: {selected.patient_name || "-"}</p>
+      <label className="filter-label" style={{width:"100%"}}>ประเภทการแจ้งเตือน
+        <select value={notifyAction} onChange={e=>setNotifyAction(e.target.value as "cancel"|"delay")} disabled={!!busyId}>
+          <option value="delay">แจ้งล่าช้า</option>
+          <option value="cancel">ยกเลิกนัดหมาย</option>
+        </select>
+      </label>
+      <label className="filter-label" style={{width:"100%",marginTop:14}}>เหตุผล
+        <textarea value={notifyReason} onChange={e=>setNotifyReason(e.target.value)} placeholder={notifyAction==="cancel"?"ระบุเหตุผลการยกเลิกนัดหมาย":"ระบุเหตุผลที่การตรวจล่าช้า"} rows={4} maxLength={500} style={{boxSizing:"border-box",width:"100%",padding:12,border:"1px solid var(--border,#d7dfeb)",borderRadius:8,font:"inherit",resize:"vertical"}} disabled={!!busyId}/>
+      </label>
+      <div className="staff-actions"><button className="action-button primary" disabled={!!busyId || !notifyReason.trim()} onClick={()=>void submitNotificationAction()}>{busyId===selected.id?"กำลังดำเนินการ...":notifyAction==="cancel"?"ยกเลิกนัดและแจ้งผู้ป่วย":"ส่งแจ้งเตือนล่าช้า"}</button><button className="action-button secondary" disabled={!!busyId} onClick={()=>setNotifyOpen(false)}>ปิด</button></div>
     </section></div>}
 
     {exportOpen && <div className="modal-backdrop" onClick={()=>setExportOpen(false)}><section className="modal-panel" role="dialog" aria-modal="true" onClick={e=>e.stopPropagation()}>

@@ -185,7 +185,7 @@ function StaffCheckInPage() {
         room_number: roomNumber.trim(),
       });
 
-      setSuccessMessage("เช็คอินผู้ป่วยสำเร็จ และแจ้งเลขห้องให้ผู้ป่วยแล้ว");
+      setSuccessMessage(`เจ้าหน้าที่เช็กอินสำเร็จ กรุณารอเรียกตรวจที่ห้อง ${roomNumber.trim()}`);
       setToken("");
       setRoomNumber("");
       setPreviewData(null);

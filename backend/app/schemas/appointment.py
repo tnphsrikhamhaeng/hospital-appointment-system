@@ -51,6 +51,7 @@ class AppointmentStatusUpdateRequest(BaseModel):
 
 class AppointmentResponse(BaseModel):
     id: uuid.UUID
+    check_in_code: str | None = None
 
     patient_id: uuid.UUID
     doctor_id: uuid.UUID

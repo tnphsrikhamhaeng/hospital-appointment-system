@@ -440,10 +440,10 @@ class AppointmentQRCodeService:
             appointment_id=appointment.id,
             patient_id=appointment.patient_id,
             notification_type=NotificationTypeEnum.APPOINTMENT_CHECKED_IN,
-            title="เช็คอินสำเร็จ",
+            title="เจ้าหน้าที่เช็กอินสำเร็จ",
             body=(
-                "คุณเช็คอินสำหรับการนัดหมายเรียบร้อยแล้ว "
-                f"กรุณาไปที่ห้องตรวจ {request.room_number.strip()}"
+                "เจ้าหน้าที่เช็กอินสำเร็จ "
+                f"กรุณารอเรียกตรวจที่ห้อง {request.room_number.strip()}"
             ),
         )
         self.db.commit()
