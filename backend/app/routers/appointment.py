@@ -110,7 +110,7 @@ def get_staff_appointments(
         raise ForbiddenException(
             detail="Only hospital staff can view all appointments."
         )
-    return service.search_appointments()
+    return service.get_staff_appointments()
 
 
 @router.get(
