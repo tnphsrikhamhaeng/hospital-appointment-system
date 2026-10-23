@@ -425,6 +425,7 @@ class AppointmentService:
             "ยกเลิกการนัดหมาย",
             (
                 "การนัดหมายของคุณถูกยกเลิกแล้ว "
+                f"เหตุผล: {request.cancelled_reason.strip()} "
                 f"{self._format_appointment_datetime(appointment)}"
             ),
         )
@@ -748,6 +749,7 @@ class AppointmentService:
                 AppointmentResponse.model_validate(
                     {
                         "id": appointment.id,
+                        "check_in_code": appointment.qr_code.token if appointment.qr_code else None,
                         "patient_id": appointment.patient_id,
                         "doctor_id": appointment.doctor_id,
                         "department_id": appointment.department_id,
