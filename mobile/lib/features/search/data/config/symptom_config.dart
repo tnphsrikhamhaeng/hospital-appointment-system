@@ -21,9 +21,8 @@ class SymptomConfig {
     ],
   };
 
-  static const List<String> symptoms = [
-    ...specialtySymptoms.values.expand((items) => items),
-  ];
+  static List<String> get symptoms =>
+      specialtySymptoms.values.expand((items) => items).toList();
 
   static const Map<String, List<String>> symptomDepartmentNames = {
     'ปวดฟัน': ['ทันตกรรม'], 'ฟันผุ': ['ทันตกรรม'],
