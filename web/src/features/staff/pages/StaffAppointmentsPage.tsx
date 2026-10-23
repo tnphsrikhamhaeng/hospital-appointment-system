@@ -50,7 +50,7 @@ function StaffAppointmentsPage() {
     setAppointments(xs => xs.map(x => x.id === a.id ? a : x));
     setSelected(null);
   };
-  const runAction = async (a: Appointment, action: "confirm" | "checkin" | "call" | "cancel" | "notify") => {
+  const runAction = async (a: Appointment, action: "confirm" | "checkin" | "call" | "notify") => {
     setError(""); setNotice("");
     if (action === "notify") {
       setNotifyAction("delay");
