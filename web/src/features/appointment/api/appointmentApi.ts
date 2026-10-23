@@ -2,6 +2,7 @@ import api from "../../../api/axios";
 
 export interface Appointment {
   id: string;
+  check_in_code?: string | null;
   patient_id: string;
   doctor_id: string;
   department_id: string;
