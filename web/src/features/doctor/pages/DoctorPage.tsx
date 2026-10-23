@@ -183,7 +183,9 @@ function DoctorPage() {
     }
 
     if (!canCallPatient(appointment)) {
-      setErrorMessage("ยังไม่ถึงเวลานัดหมาย ไม่สามารถเรียกผู้ป่วยได้");
+      setErrorMessage("ทำรายการไม่สำเร็จ กรุณาเรียกผู้ป่วยตามเวลาที่กำหนด");
+      setCallPatientAppointmentId(null);
+      setRoomNumber("");
       return;
     }
 
@@ -208,6 +210,8 @@ function DoctorPage() {
       setRoomNumber("");
     } catch {
       setErrorMessage("ไม่สามารถเรียกผู้ป่วยได้");
+      setCallPatientAppointmentId(null);
+      setRoomNumber("");
     } finally {
       setIsUpdating(null);
     }
