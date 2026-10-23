@@ -60,12 +60,22 @@ function StaffAppointmentsPage() {
     }
     const status = action === "confirm" ? "confirmed" : action === "checkin" ? "checked_in" : "in_progress";
     const room = (rooms[a.id] ?? "").trim();
-    if (action !== "confirm" && !room) { setError("กรุณากรอกเลขห้องตรวจก่อนดำเนินการ"); return; }
+    if (action !== "confirm" && !room) { setError("กรุณากรอกเลขห้องตรวจก่อนดำเนินการ"); setSelected(null); return; }
     setBusyId(a.id);
     try {
-      updateLocal(await updateAppointmentStatus(a.id,{status, ...(action === "confirm" ? {} : {room_number:room})}));
+      const updated = await updateAppointmentStatus(a.id,{status, ...(action === "confirm" ? {} : {room_number:room})});
+      updateLocal(updated);
       setNotice(action === "confirm" ? "ยืนยันนัดหมายและส่งแจ้งเตือนแล้ว" : action === "checkin" ? "เช็คอินและแจ้งเลขห้องแล้ว" : "เรียกผู้ป่วยและแจ้งเตือนแล้ว");
-    } catch { setError("ดำเนินการไม่สำเร็จ กรุณาลองใหม่"); }
+    } catch {
+      const [year, month, day] = a.appointment_date.split("-").map(Number);
+      const [hour, minute] = a.start_time.split(":").map(Number);
+      const appointmentStart = new Date(year, month - 1, day, hour, minute);
+      const tooEarly = action === "call" && Date.now() < appointmentStart.getTime();
+      setError(tooEarly
+        ? "ทำรายการไม่สำเร็จ กรุณาเรียกผู้ป่วยตามเวลาที่กำหนด"
+        : "ดำเนินการไม่สำเร็จ กรุณาลองใหม่");
+      setSelected(null);
+    }
     finally { setBusyId(null); }
   };
 
@@ -86,6 +96,7 @@ function StaffAppointmentsPage() {
       setNotifyOpen(false); setSelected(null); setNotifyReason("");
     } catch {
       setError(notifyAction === "cancel" ? "ยกเลิกนัดหมายหรือส่งแจ้งเตือนไม่สำเร็จ" : "ส่งแจ้งเตือนการล่าช้าไม่สำเร็จ");
+      setNotifyOpen(false); setSelected(null); setNotifyReason("");
     } finally { setBusyId(null); }
   };
 
