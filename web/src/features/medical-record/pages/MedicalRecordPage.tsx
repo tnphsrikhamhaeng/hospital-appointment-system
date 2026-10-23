@@ -109,19 +109,7 @@ function MedicalRecordPage() {
           formData.note?.trim() || null,
       });
 
-      setSuccessMessage(
-        "บันทึกผลการรักษาสำเร็จ",
-      );
-
-      setFormData({
-        chief_complaint: "",
-        present_illness: null,
-        physical_examination: null,
-        diagnosis: "",
-        treatment: null,
-        recommendation: null,
-        note: null,
-      });
+      navigate("/doctor", { replace: true });
     } catch (error: unknown) {
       if (
         typeof error === "object" &&
