@@ -478,6 +478,17 @@ class AppointmentService:
                     detail="Room number is required for check-in and calling a patient."
                 )
 
+            if request.status == AppointmentStatusEnum.IN_PROGRESS:
+                appointment_start = datetime.combine(
+                    appointment.appointment_date,
+                    appointment.start_time,
+                ).replace(tzinfo=HOSPITAL_TIMEZONE)
+                now = datetime.now(HOSPITAL_TIMEZONE)
+                if now < appointment_start:
+                    raise ConflictException(
+                        detail="ยังไม่ถึงเวลานัดหมาย ไม่สามารถเรียกผู้ป่วยได้"
+                    )
+
             if request.status == AppointmentStatusEnum.CONFIRMED:
                 if appointment.status != AppointmentStatusEnum.PENDING:
                     raise ConflictException(

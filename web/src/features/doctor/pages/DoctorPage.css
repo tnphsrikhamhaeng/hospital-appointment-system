@@ -88,6 +88,18 @@
   font-weight: 400;
 }
 
+.doctor-alert.success {
+  border-color: #b7e4cb;
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.doctor-alert.error {
+  border-color: #f0caca;
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
 /* =========================
    Current Patient
 ========================= */
