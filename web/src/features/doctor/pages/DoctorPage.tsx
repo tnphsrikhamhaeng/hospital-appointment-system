@@ -482,7 +482,7 @@ function DoctorPage() {
         </header>
 
         {errorMessage && (
-          <div className="doctor-alert" role="alert">
+          <div className={`doctor-alert ${errorMessage.startsWith("ส่งการแจ้งเตือน") ? "success" : "error"}`} role={errorMessage.startsWith("ส่งการแจ้งเตือน") ? "status" : "alert"}>
             {errorMessage}
           </div>
         )}
