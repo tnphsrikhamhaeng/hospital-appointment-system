@@ -40,6 +40,7 @@ from app.schemas.appointment import (
     DoctorScheduleResponse,
 )
 from app.services.notification_service import NotificationService
+from app.services.appointment_qr import AppointmentQRCodeService
 
 
 _FINAL_STATUSES = (
@@ -719,6 +720,58 @@ class AppointmentService:
         return AppointmentResponse.model_validate(
             appointment
         )
+
+    def get_staff_appointments(self) -> list[AppointmentResponse]:
+        """Return staff appointment rows with a check-in code ready to use."""
+        appointments = self.appointment_repository.search()
+        qr_service = AppointmentQRCodeService(self.db)
+        results = []
+
+        for appointment in appointments:
+            check_in_code = None
+            if appointment.status not in {
+                AppointmentStatusEnum.CANCELLED,
+                AppointmentStatusEnum.COMPLETED,
+                AppointmentStatusEnum.NO_SHOW,
+            }:
+                qr_code = qr_service.get_qr(appointment.id)
+                check_in_code = qr_code.token
+
+            patient = appointment.patient
+            doctor = appointment.doctor
+            department = appointment.department
+            results.append(
+                AppointmentResponse.model_validate(
+                    {
+                        "id": appointment.id,
+                        "check_in_code": check_in_code,
+                        "patient_id": appointment.patient_id,
+                        "doctor_id": appointment.doctor_id,
+                        "department_id": appointment.department_id,
+                        "patient_name": (
+                            f"{patient.first_name} {patient.last_name}"
+                            if patient else None
+                        ),
+                        "doctor_name": (
+                            f"{'นพ.' if doctor.preface.value == 'mr_doctor' else 'พญ.' if doctor.preface.value == 'female_doctor' else ''} {doctor.first_name} {doctor.last_name}".strip()
+                            if doctor else None
+                        ),
+                        "department_name": department.name if department else None,
+                        "appointment_date": appointment.appointment_date,
+                        "start_time": appointment.start_time,
+                        "end_time": appointment.end_time,
+                        "reason": appointment.reason,
+                        "status": appointment.status,
+                        "cancelled_reason": appointment.cancelled_reason,
+                        "cancelled_at": appointment.cancelled_at,
+                        "confirmed_at": appointment.confirmed_at,
+                        "created_at": appointment.created_at,
+                        "updated_at": appointment.updated_at,
+                    }
+                )
+            )
+
+        return results
 
     # =========================================================
     # SEARCH
