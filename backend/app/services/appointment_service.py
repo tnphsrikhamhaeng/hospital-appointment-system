@@ -40,6 +40,7 @@ from app.schemas.appointment import (
     DoctorScheduleResponse,
 )
 from app.services.notification_service import NotificationService
+from app.services.appointment_qr import AppointmentQRCodeService
 
 
 _FINAL_STATUSES = (
@@ -624,9 +625,28 @@ class AppointmentService:
                 None,
             )
 
-        return AppointmentResponse.model_validate(
-            appointment
-        )
+        response = AppointmentResponse.model_validate(appointment)
+
+        # Generate the check-in code as soon as staff confirms the appointment.
+        # Otherwise the UI shows "-" until the patient opens the QR/check-in page.
+        response_updates = {
+            "patient_name": (
+                f"{appointment.patient.first_name} {appointment.patient.last_name}"
+                if appointment.patient else None
+            ),
+            "doctor_name": (
+                f"{'นพ.' if appointment.doctor.preface.value == 'mr_doctor' else 'พญ.' if appointment.doctor.preface.value == 'female_doctor' else ''} "
+                f"{appointment.doctor.first_name} {appointment.doctor.last_name}"
+            ).strip() if appointment.doctor else None,
+            "department_name": (
+                appointment.department.name if appointment.department else None
+            ),
+        }
+        if request.status == AppointmentStatusEnum.CONFIRMED:
+            qr_response = AppointmentQRCodeService(self.db).get_qr(appointment.id)
+            response_updates["check_in_code"] = qr_response.token
+
+        return response.model_copy(update=response_updates)
 
     # =========================================================
     # RESCHEDULE APPOINTMENT
