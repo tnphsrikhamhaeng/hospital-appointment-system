@@ -46,8 +46,19 @@ function StaffAppointmentsPage() {
     .sort((a,b) => a.appointment_date.localeCompare(b.appointment_date) || a.start_time.localeCompare(b.start_time)),
   [appointments, searchId, filterDate, filterStatus]);
 
+  // Status/cancel endpoints return the appointment row without joined display names.
+  // Preserve the names and other list-only fields from the already-loaded record.
+  const mergeAppointment = (previous: Appointment, updated: Appointment): Appointment => ({
+    ...previous,
+    ...updated,
+    patient_name: updated.patient_name ?? previous.patient_name,
+    doctor_name: updated.doctor_name ?? previous.doctor_name,
+    department_name: updated.department_name ?? previous.department_name,
+    check_in_code: updated.check_in_code ?? previous.check_in_code,
+  });
+
   const updateLocal = (a: Appointment) => {
-    setAppointments(xs => xs.map(x => x.id === a.id ? a : x));
+    setAppointments(xs => xs.map(x => x.id === a.id ? mergeAppointment(x, a) : x));
     setSelected(null);
   };
   const runAction = async (a: Appointment, action: "confirm" | "checkin" | "call" | "notify") => {
@@ -87,7 +98,7 @@ function StaffAppointmentsPage() {
     try {
       if (notifyAction === "cancel") {
         const updated = await cancelAppointment(selected.id, { cancelled_reason: reason });
-        setAppointments(xs => xs.map(x => x.id === updated.id ? updated : x));
+        setAppointments(xs => xs.map(x => x.id === updated.id ? mergeAppointment(x, updated) : x));
         setNotice("ยกเลิกนัดหมายและส่งแจ้งเตือนผู้ป่วยแล้ว");
       } else {
         await sendStaffAppointmentNotification(selected.id, `แจ้งล่าช้า: ${reason}`);
