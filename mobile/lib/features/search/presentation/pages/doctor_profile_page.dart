@@ -93,40 +93,61 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
   }
 
   IconData _getExpertiseIcon(String expertise) {
-    final value = expertise.toLowerCase();
+    final value = expertise.trim().toLowerCase();
 
+    if (value.contains('ทันต') || value.contains('dent')) {
+      return Icons.health_and_safety_rounded;
+    }
+    if (value.contains('จักษุ') || value.contains('ตา') || value.contains('ophthalm')) {
+      return Icons.visibility_rounded;
+    }
+    if (value.contains('โสต') || value.contains('นาสิก') || value.contains('ent') ||
+        value.contains('หู คอ จมูก')) {
+      return Icons.hearing_rounded;
+    }
+    if (value.contains('ผิวหนัง') || value.contains('dermat')) {
+      return Icons.face_rounded;
+    }
     if (value.contains('หัวใจ') || value.contains('cardio')) {
       return Icons.favorite_rounded;
     }
-
-    if (value.contains('ประสาท') ||
-        value.contains('สมอง') ||
-        value.contains('neuro')) {
+    if (value.contains('ประสาท') || value.contains('สมอง') || value.contains('neuro')) {
       return Icons.psychology_rounded;
     }
-
     if (value.contains('ทางเดินอาหาร') || value.contains('gastro')) {
       return Icons.restaurant_rounded;
     }
-
     if (value.contains('อายุร') || value.contains('internal')) {
       return Icons.medical_services_rounded;
     }
-
-    return Icons.medical_services_rounded;
+    return Icons.local_hospital_rounded;
   }
 
   Color _getExpertiseColor(String expertise) {
-    final value = expertise.toLowerCase();
+    final value = expertise.trim().toLowerCase();
 
+    if (value.contains('ทันต') || value.contains('dent')) {
+      return const Color(0xFF0D9488);
+    }
+    if (value.contains('จักษุ') || value.contains('ตา') || value.contains('ophthalm')) {
+      return const Color(0xFF2563EB);
+    }
+    if (value.contains('โสต') || value.contains('นาสิก') || value.contains('ent') ||
+        value.contains('หู คอ จมูก')) {
+      return const Color(0xFF7C3AED);
+    }
+    if (value.contains('ผิวหนัง') || value.contains('dermat')) {
+      return const Color(0xFFDB2777);
+    }
     if (value.contains('หัวใจ') || value.contains('cardio')) {
       return AppTheme.errorColor;
     }
-
     if (value.contains('ทางเดินอาหาร') || value.contains('gastro')) {
       return AppTheme.warningColor;
     }
-
+    if (value.contains('อายุร') || value.contains('internal')) {
+      return AppTheme.successColor;
+    }
     return AppTheme.primaryColor;
   }
 
@@ -421,12 +442,12 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: AppTheme.primaryBackgroundColor,
+              color: _getExpertiseColor(doctor.department.name).withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.local_hospital_rounded,
-              color: AppTheme.primaryColor,
+            child: Icon(
+              _getExpertiseIcon(doctor.department.name),
+              color: _getExpertiseColor(doctor.department.name),
               size: 21,
             ),
           ),
