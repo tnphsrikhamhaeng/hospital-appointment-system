@@ -40,7 +40,7 @@ function StaffAppointmentsPage() {
   useEffect(() => { void reload(); }, []);
 
   const filtered = useMemo(() => appointments
-    .filter(a => !searchId.trim() || (a.check_in_code ?? "").toLowerCase().includes(searchId.trim().toLowerCase()) || (a.patient_name ?? "").toLowerCase().includes(searchId.trim().toLowerCase()))
+    .filter(a => !searchId.trim() || (a.patient_name ?? "").toLowerCase().includes(searchId.trim().toLowerCase()))
     .filter(a => !filterDate || a.appointment_date === filterDate)
     .filter(a => filterStatus === "all" || a.status === filterStatus)
     .sort((a,b) => a.appointment_date.localeCompare(b.appointment_date) || a.start_time.localeCompare(b.start_time)),
@@ -162,7 +162,7 @@ function StaffAppointmentsPage() {
       <button className="action-button primary" onClick={()=>setExportOpen(true)}>ส่งออกรายงาน PDF</button></header>
     {error && <div className="doctor-alert" role="alert">{error}</div>}{notice && <div className="doctor-alert" role="status">{notice}</div>}
     <section className="current-patient-card" style={{marginBottom:18}}><div style={{display:"flex",gap:14,flexWrap:"wrap",padding:20,alignItems:"end"}}>
-      <label className="filter-label">ค้นหารหัสเช็กอินหรือชื่อผู้ป่วย<input value={searchId} onChange={e=>setSearchId(e.target.value)} placeholder="พิมพ์ชื่อหรือรหัสเช็กอิน"/></label>
+      <label className="filter-label">ค้นหาชื่อผู้ป่วย<input value={searchId} onChange={e=>setSearchId(e.target.value)} placeholder="พิมพ์ชื่อผู้ป่วย"/></label>
       <label className="filter-label">วันที่นัด<input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)}/></label>
       <label className="filter-label">กรองตามสถานะ<select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}><option value="all">ทุกสถานะ</option>{Object.entries(statusLabels).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label>
       <button className="action-button secondary" onClick={()=>{setSearchId("");setFilterDate("");setFilterStatus("all");}}>ล้างตัวกรอง</button>
