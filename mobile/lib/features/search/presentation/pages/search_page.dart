@@ -231,41 +231,62 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   IconData _getDepartmentIcon(String departmentName) {
-    switch (departmentName.trim()) {
-      case 'ศูนย์สมองและระบบประสาท':
-        return Icons.psychology_rounded;
+    final name = departmentName.trim().toLowerCase();
 
-      case 'คลินิกอายุรกรรม':
-        return Icons.medical_services_rounded;
-
-      case 'ศูนย์หัวใจ':
-        return Icons.favorite_rounded;
-
-      case 'ศูนย์ทางเดินอาหาร':
-        return Icons.restaurant_rounded;
-
-      default:
-        return Icons.medical_services_rounded;
+    if (name.contains('ทันต') || name.contains('dent')) {
+      return Icons.health_and_safety_rounded;
     }
+    if (name.contains('จักษุ') || name.contains('ตา') || name.contains('ophthalm')) {
+      return Icons.visibility_rounded;
+    }
+    if (name.contains('โสต') || name.contains('นาสิก') || name.contains('ent') ||
+        name.contains('หู คอ จมูก')) {
+      return Icons.hearing_rounded;
+    }
+    if (name.contains('ผิวหนัง') || name.contains('dermat')) {
+      return Icons.face_rounded;
+    }
+    if (name.contains('สมอง') || name.contains('ประสาท')) {
+      return Icons.psychology_rounded;
+    }
+    if (name.contains('หัวใจ') || name.contains('cardio')) {
+      return Icons.favorite_rounded;
+    }
+    if (name.contains('ทางเดินอาหาร') || name.contains('กระเพาะ')) {
+      return Icons.restaurant_rounded;
+    }
+    if (name.contains('อายุร')) {
+      return Icons.medical_services_rounded;
+    }
+    return Icons.local_hospital_rounded;
   }
 
   Color _getDepartmentColor(String departmentName) {
-    switch (departmentName.trim()) {
-      case 'ศูนย์สมองและระบบประสาท':
-        return AppTheme.primaryColor;
+    final name = departmentName.trim().toLowerCase();
 
-      case 'คลินิกอายุรกรรม':
-        return AppTheme.successColor;
-
-      case 'ศูนย์หัวใจ':
-        return AppTheme.errorColor;
-
-      case 'ศูนย์ทางเดินอาหาร':
-        return AppTheme.warningColor;
-
-      default:
-        return AppTheme.primaryColor;
+    if (name.contains('ทันต') || name.contains('dent')) {
+      return const Color(0xFF0D9488);
     }
+    if (name.contains('จักษุ') || name.contains('ตา') || name.contains('ophthalm')) {
+      return const Color(0xFF2563EB);
+    }
+    if (name.contains('โสต') || name.contains('นาสิก') || name.contains('ent') ||
+        name.contains('หู คอ จมูก')) {
+      return const Color(0xFF7C3AED);
+    }
+    if (name.contains('ผิวหนัง') || name.contains('dermat')) {
+      return const Color(0xFFDB2777);
+    }
+    if (name.contains('หัวใจ')) {
+      return AppTheme.errorColor;
+    }
+    if (name.contains('ทางเดินอาหาร')) {
+      return AppTheme.warningColor;
+    }
+    if (name.contains('อายุร')) {
+      return AppTheme.successColor;
+    }
+    return AppTheme.primaryColor;
   }
 
   Color _getDepartmentBackgroundColor(String departmentName) {
@@ -453,93 +474,32 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _buildRecommendedSymptoms(BuildContext context) {
-    final theme = Theme.of(context);
+    final symptoms = SymptomConfig.symptoms;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'แผนกเฉพาะทาง',
-          style: theme.textTheme.titleMedium?.copyWith(
+          'ค้นหาอาการ',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
             fontSize: 16,
             fontWeight: FontWeight.w700,
             color: AppTheme.textPrimaryColor,
           ),
         ),
-        const SizedBox(height: 6),
-        Text(
-          'เลือกแผนกหรือค้นหาจากอาการที่เกี่ยวข้อง',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: AppTheme.textSecondaryColor,
-          ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: symptoms.map((symptom) {
+            return _buildSymptomChip(
+              context,
+              label: symptom,
+              isSelected: false,
+              onTap: () => _selectSymptom(symptom),
+            );
+          }).toList(),
         ),
-        const SizedBox(height: 16),
-        ...SymptomConfig.specialtySymptoms.entries.map((entry) {
-          return Container(
-            width: double.infinity,
-            margin: const EdgeInsets.only(bottom: 14),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceColor,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE5EAF1)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                InkWell(
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: () {
-                    _searchController.text = entry.key;
-                    _searchFocusNode.unfocus();
-                    _updateSearchResults(entry.key);
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            entry.key,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.primaryDarkColor,
-                            ),
-                          ),
-                        ),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          color: AppTheme.primaryColor,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'คำค้นหาเกี่ยวกับอาการ',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textSecondaryColor,
-                  ),
-                ),
-                const SizedBox(height: 9),
-                Wrap(
-                  spacing: 7,
-                  runSpacing: 7,
-                  children: entry.value.map((symptom) {
-                    return _buildSymptomChip(
-                      context,
-                      label: symptom,
-                      isSelected: false,
-                      onTap: () => _selectSymptom(symptom),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
-          );
-        }),
       ],
     );
   }
