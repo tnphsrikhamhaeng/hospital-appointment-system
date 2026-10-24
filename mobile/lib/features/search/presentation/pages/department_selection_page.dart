@@ -239,33 +239,62 @@ class _DepartmentSelectionPageState extends State<DepartmentSelectionPage> {
   }
 
   IconData _getDepartmentIcon(String department) {
-    switch (department) {
-      case 'ศูนย์สมองและระบบประสาท':
-        return Icons.psychology_rounded;
-      case 'คลินิกอายุรกรรม':
-        return Icons.medical_services_rounded;
-      case 'ศูนย์หัวใจ':
-        return Icons.favorite_rounded;
-      case 'ศูนย์ทางเดินอาหาร':
-        return Icons.restaurant_rounded;
-      default:
-        return Icons.medical_services_rounded;
+    final name = department.trim().toLowerCase();
+
+    if (name.contains('ทันต') || name.contains('dent')) {
+      return Icons.health_and_safety_rounded;
     }
+    if (name.contains('จักษุ') || name.contains('ตา') || name.contains('ophthalm')) {
+      return Icons.visibility_rounded;
+    }
+    if (name.contains('โสต') || name.contains('นาสิก') || name.contains('ent') ||
+        name.contains('หู คอ จมูก')) {
+      return Icons.hearing_rounded;
+    }
+    if (name.contains('ผิวหนัง') || name.contains('dermat')) {
+      return Icons.face_rounded;
+    }
+    if (name.contains('ศูนย์สมอง') || name.contains('ประสาท')) {
+      return Icons.psychology_rounded;
+    }
+    if (name.contains('ศูนย์หัวใจ') || name.contains('หัวใจ')) {
+      return Icons.favorite_rounded;
+    }
+    if (name.contains('ทางเดินอาหาร')) {
+      return Icons.restaurant_rounded;
+    }
+    if (name.contains('อายุร')) {
+      return Icons.medical_services_rounded;
+    }
+    return Icons.local_hospital_rounded;
   }
 
   Color _getDepartmentIconColor(String department) {
-    switch (department) {
-      case 'ศูนย์สมองและระบบประสาท':
-        return AppTheme.primaryColor;
-      case 'คลินิกอายุรกรรม':
-        return AppTheme.successColor;
-      case 'ศูนย์หัวใจ':
-        return AppTheme.errorColor;
-      case 'ศูนย์ทางเดินอาหาร':
-        return AppTheme.warningColor;
-      default:
-        return AppTheme.primaryColor;
+    final name = department.trim().toLowerCase();
+
+    if (name.contains('ทันต') || name.contains('dent')) {
+      return const Color(0xFF0D9488);
     }
+    if (name.contains('จักษุ') || name.contains('ตา') || name.contains('ophthalm')) {
+      return const Color(0xFF2563EB);
+    }
+    if (name.contains('โสต') || name.contains('นาสิก') || name.contains('ent') ||
+        name.contains('หู คอ จมูก')) {
+      return const Color(0xFF7C3AED);
+    }
+    if (name.contains('ผิวหนัง') || name.contains('dermat')) {
+      return const Color(0xFFDB2777);
+    }
+    if (name.contains('ศูนย์หัวใจ') || name.contains('หัวใจ')) {
+      return AppTheme.errorColor;
+    }
+    if (name.contains('ทางเดินอาหาร')) {
+      return AppTheme.warningColor;
+    }
+    if (name.contains('อายุร')) {
+      return AppTheme.successColor;
+    }
+    return AppTheme.primaryColor;
   }
 
   Widget _buildDepartmentCard(
