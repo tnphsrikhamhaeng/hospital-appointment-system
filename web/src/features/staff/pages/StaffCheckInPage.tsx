@@ -467,7 +467,7 @@ function StaffCheckInPage() {
 
             <div className="check-in-modal-data-item full-width" style={{ marginTop: 16 }}>
               <label className="check-in-modal-data-label" htmlFor="check-in-room-number">
-                เลขห้องตรวจ (เจ้าหน้าที่กรอก)
+                เลขห้องตรวจ
               </label>
               <input
                 id="check-in-room-number"
