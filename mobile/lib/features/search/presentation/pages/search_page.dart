@@ -455,32 +455,91 @@ class _SearchPageState extends State<SearchPage> {
   Widget _buildRecommendedSymptoms(BuildContext context) {
     final theme = Theme.of(context);
 
-    final symptoms = SymptomConfig.symptoms;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'อาการที่เกี่ยวข้อง',
+          'แผนกเฉพาะทาง',
           style: theme.textTheme.titleMedium?.copyWith(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
             color: AppTheme.textPrimaryColor,
           ),
         ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: symptoms.map((symptom) {
-            return _buildSymptomChip(
-              context,
-              label: symptom,
-              isSelected: false,
-              onTap: () => _selectSymptom(symptom),
-            );
-          }).toList(),
+        const SizedBox(height: 6),
+        Text(
+          'เลือกแผนกหรือค้นหาจากอาการที่เกี่ยวข้อง',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: AppTheme.textSecondaryColor,
+          ),
         ),
+        const SizedBox(height: 16),
+        ...SymptomConfig.specialtySymptoms.entries.map((entry) {
+          return Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceColor,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE5EAF1)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () {
+                    _searchController.text = entry.key;
+                    _searchFocusNode.unfocus();
+                    _updateSearchResults(entry.key);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            entry.key,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.primaryDarkColor,
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'คำค้นหาเกี่ยวกับอาการ',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textSecondaryColor,
+                  ),
+                ),
+                const SizedBox(height: 9),
+                Wrap(
+                  spacing: 7,
+                  runSpacing: 7,
+                  children: entry.value.map((symptom) {
+                    return _buildSymptomChip(
+                      context,
+                      label: symptom,
+                      isSelected: false,
+                      onTap: () => _selectSymptom(symptom),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          );
+        }),
       ],
     );
   }

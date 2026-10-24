@@ -584,35 +584,27 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildSearchSuggestions(BuildContext context) {
+    const specialties = [
+      ('ทันตกรรม', Icons.medical_services_outlined),
+      ('จักษุวิทยา', Icons.visibility_outlined),
+      ('โสต ศอ นาสิก (ENT)', Icons.hearing_outlined),
+      ('ผิวหนัง', Icons.face_retouching_natural_outlined),
+    ];
+
     return SizedBox(
       height: 42,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.only(right: 4),
         children: [
-          _buildSuggestionChip(
-            context,
-            label: 'ปวดหัว',
-            icon: Icons.sentiment_dissatisfied_outlined,
-          ),
-          const SizedBox(width: 10),
-          _buildSuggestionChip(
-            context,
-            label: 'ปวดท้อง',
-            icon: Icons.sick_outlined,
-          ),
-          const SizedBox(width: 10),
-          _buildSuggestionChip(
-            context,
-            label: 'ไอ เจ็บคอ',
-            icon: Icons.sick_outlined,
-          ),
-          const SizedBox(width: 10),
-          _buildSuggestionChip(
-            context,
-            label: 'ไข้',
-            icon: Icons.thermostat_outlined,
-          ),
+          for (var i = 0; i < specialties.length; i++) ...[
+            if (i > 0) const SizedBox(width: 10),
+            _buildSuggestionChip(
+              context,
+              label: specialties[i].$1,
+              icon: specialties[i].$2,
+            ),
+          ],
         ],
       ),
     );
