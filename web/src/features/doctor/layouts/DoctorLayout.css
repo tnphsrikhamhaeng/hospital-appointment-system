@@ -9,7 +9,7 @@
 }
 
 /* =========================
-   Doctor Sidebar
+   Shared Doctor / Staff Sidebar
 ========================= */
 
 .doctor-sidebar {
@@ -22,7 +22,7 @@
   display: flex;
   flex-direction: column;
   background: #0b1933;
-  color: #fff;
+  color: #f8fafc;
 }
 
 .sidebar-brand {
@@ -31,7 +31,7 @@
   gap: 12px;
   min-height: 78px;
   padding: 16px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 .sidebar-logo {
@@ -43,7 +43,7 @@
 
 .sidebar-brand strong {
   display: block;
-  color: #fff;
+  color: #ffffff;
   font-size: 19px;
   line-height: 1.3;
   font-weight: 600;
@@ -52,7 +52,7 @@
 .sidebar-brand span {
   display: block;
   margin-top: 2px;
-  color: rgba(255, 255, 255, 0.65);
+  color: #c5d0e0;
   font-size: 12px;
   line-height: 1.4;
   font-weight: 400;
@@ -66,6 +66,10 @@
   padding-left: 18px;
   margin-top: 15px;
   margin-bottom: 15px;
+  color: #f8fafc;
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 500;
 }
 
 /* =========================
@@ -74,7 +78,7 @@
 
 .sidebar-role {
   padding: 24px 18px 10px;
-  color: rgba(255, 255, 255, 0.62);
+  color: #c5d0e0;
   font-size: 16px;
   line-height: 1.5;
   font-weight: 400;
@@ -108,7 +112,7 @@
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.72);
+  color: #d7e2f0;
   font-family: var(--font);
   font-size: 15px;
   line-height: 1.5;
@@ -121,14 +125,20 @@
 
 .sidebar-nav-item:hover,
 .sidebar-bottom-item:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.sidebar-nav-item:focus-visible,
+.sidebar-bottom-item:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
 }
 
 .sidebar-nav-item.active {
-  background: #176ed1;
-  color: #fff;
-  font-weight: 400;
+  background: #1d4ed8;
+  color: #ffffff;
+  font-weight: 500;
 }
 
 .nav-icon {
@@ -150,15 +160,15 @@
   gap: 4px;
   margin-top: auto;
   padding: 16px 10px 22px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 .sidebar-bottom-item {
-  color: rgba(255, 255, 255, 0.68);
+  color: #d7e2f0;
 }
 
 .logout-item {
-  color: rgba(255, 255, 255, 0.62);
+  color: #fca5a5;
 }
 
 /* =========================
